@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.title }}{% endblock title %}
+{% block content %}
+    <article class="article-page">
+        <h2>{{ article.title }}</h2>
+        <p class="meta">
+            By <a href="{% url 'news:journalist_detail' article.author.id %}">{{ article.author }}</a> &middot;
+            {% if article.publication %}
+                <a href="{% url 'news:publication_detail' article.publication.id %}">{{ article.publication.name }}</a>
+            {% else %}
+                Independent
+            {% endif %}
+            &middot; {{ article.created_at|date:"j M Y" }}
+        </p>
+
+        {% if not article.approved %}
+            <p class="note">
+                This article is pending. Until it is approved, only
+                {% if article.publication %}the staff of {{ article.publication.name }}{% else %}its author{% endif %}
+                can read it.
+            </p>
+        {% endif %}
+
+        <div class="article-body">{{ article.content|linebreaks }}</div>
+
+        {% if can_approve or can_change %}
+            <div class="actions">
+                {% if can_approve %}
+                    <a class="button button-primary" href="{% url 'news:approve_article' article.id %}">Approve</a>
+                {% endif %}
+                {% if can_change %}
+                    <a class="button" href="{% url 'news:edit_article' article.id %}">Edit</a>
+                    <a class="button button-danger" href="{% url 'news:delete_article' article.id %}">Delete</a>
+                {% endif %}
+            </div>
+        {% endif %}
+
+        {# Readers can subscribe to the article's journalist and its publication. #}
+        {% if user.role == user.READER %}
+            <h3>Subscribe</h3>
+            <ul class="item-list">
+                <li>
+                    <span>{{ article.author }} <span class="meta">Their independent articles</span></span>
+                    {% url 'news:journalist_subscription' article.author.id as url %}
+                    {% include 'news/includes/subscribe_form.html' with subscribed=subscribed_to_author small=True %}
+                </li>
+                {% if article.publication %}
+                    <li>
+                        <span>{{ article.publication.name }} <span class="meta">All its articles</span></span>
+                        {% url 'news:publication_subscription' article.publication.id as url %}
+                        {% include 'news/includes/subscribe_form.html' with subscribed=subscribed_to_publication small=True %}
+                    </li>
+                {% endif %}
+            </ul>
+        {% endif %}
+    </article>
+{% endblock content %}

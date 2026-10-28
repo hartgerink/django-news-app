@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock title %}
+{% block content %}
+    <h2>Editor Dashboard</h2>
+    <p class="meta">The pending articles of the publications you work for, oldest first.</p>
+
+    {% for publication in publications %}
+        <h3>
+            <a href="{% url 'news:publication_detail' publication.id %}">{{ publication.name }}</a>
+            <span class="badge">{{ publication.pending_articles|length }}</span>
+        </h3>
+        {% if publication.pending_articles %}
+            <ul class="item-list">
+                {% for article in publication.pending_articles %}
+                    {% include 'news/includes/article_row.html' with show_author=True manage=True approve=True %}
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="note">No articles are waiting for review.</p>
+        {% endif %}
+    {% empty %}
+        <p class="note">You are not on the staff of any publication yet.</p>
+    {% endfor %}
+{% endblock content %}

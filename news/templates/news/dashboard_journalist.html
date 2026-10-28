@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock title %}
+{% block content %}
+    <h2>Journalist Dashboard</h2>
+    <div class="actions">
+        <a class="button button-primary" href="{% url 'news:create_article' %}">+ New Article</a>
+        <a class="button button-primary" href="{% url 'news:create_newsletter' %}">+ New Newsletter</a>
+    </div>
+    <p class="meta">
+        Your independent work, and everything at the publications you work for.
+    </p>
+
+    <h3>Pending Articles <span class="badge">{{ pending_articles|length }}</span></h3>
+    {% if pending_articles %}
+        <ul class="item-list">
+            {% for article in pending_articles %}
+                {# A journalist approves only their own independent articles. #}
+                {% if article.publication %}
+                    {% include 'news/includes/article_row.html' with show_author=True show_publication=True manage=True %}
+                {% else %}
+                    {% include 'news/includes/article_row.html' with show_author=True show_publication=True manage=True approve=True %}
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">There are no pending articles.</p>
+    {% endif %}
+
+    <h3>Approved Articles <span class="badge">{{ approved_articles|length }}</span></h3>
+    {% if approved_articles %}
+        <ul class="item-list">
+            {% for article in approved_articles %}
+                {% include 'news/includes/article_row.html' with show_author=True show_publication=True manage=True %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">There are no approved articles yet.</p>
+    {% endif %}
+
+    <h3>Newsletters <span class="badge">{{ newsletters|length }}</span></h3>
+    {% if newsletters %}
+        <ul class="item-list">
+            {% for newsletter in newsletters %}
+                {% include 'news/includes/newsletter_row.html' with show_author=True show_publication=True manage=True %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">There are no newsletters yet.</p>
+    {% endif %}
+
+    <h3>My Publications <span class="badge">{{ publications|length }}</span></h3>
+    {% if publications %}
+        <ul class="item-list">
+            {% for publication in publications %}
+                <li><a href="{% url 'news:publication_detail' publication.id %}">{{ publication.name }}</a></li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">You are not on the staff of any publication yet. You can still write independent articles.</p>
+    {% endif %}
+{% endblock content %}

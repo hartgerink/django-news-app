@@ -1,0 +1,30 @@
+{% comment %}
+    One newsletter in a list: its title, its details, and its buttons.
+    Include it inside <ul class="item-list">, where "newsletter" is the
+    current newsletter, with any of these:
+    - show_author: True to show the author.
+    - show_publication: True to show the publication, or "Independent".
+    - show_count: True to show how many articles it has, when the
+      list counted them as article_count.
+    - manage: True for Edit and Delete buttons.
+{% endcomment %}
+<li>
+    <span>
+        {{ newsletter.title }}
+        <span class="meta">
+            {% if show_author %}{{ newsletter.author }} &middot;{% endif %}
+            {% if show_publication %}{{ newsletter.publication.name|default:"Independent" }} &middot;{% endif %}
+            {% if show_count %}
+                {{ newsletter.article_count }} article{{ newsletter.article_count|pluralize }} &middot;
+            {% endif %}
+            {{ newsletter.created_at|date:"j M Y" }}
+        </span>
+    </span>
+    <span class="actions">
+        <a class="button button-small" href="{% url 'news:newsletter_detail' newsletter.id %}">View</a>
+        {% if manage %}
+            <a class="button button-small" href="{% url 'news:edit_newsletter' newsletter.id %}">Edit</a>
+            <a class="button button-small button-danger" href="{% url 'news:delete_newsletter' newsletter.id %}">Delete</a>
+        {% endif %}
+    </span>
+</li>

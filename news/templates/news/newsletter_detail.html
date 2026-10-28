@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}{{ newsletter.title }}{% endblock title %}
+{% block content %}
+    <article class="article-page">
+        <h2>{{ newsletter.title }}</h2>
+        <p class="meta">
+            By <a href="{% url 'news:journalist_detail' newsletter.author.id %}">{{ newsletter.author }}</a> &middot;
+            {% if newsletter.publication %}
+                <a href="{% url 'news:publication_detail' newsletter.publication.id %}">{{ newsletter.publication.name }}</a>
+            {% else %}
+                Independent
+            {% endif %}
+            &middot; {{ newsletter.created_at|date:"j M Y" }}
+        </p>
+        {{ newsletter.description|linebreaks }}
+
+        {% if can_change %}
+            <div class="actions">
+                <a class="button" href="{% url 'news:edit_newsletter' newsletter.id %}">Edit</a>
+                <a class="button button-danger" href="{% url 'news:delete_newsletter' newsletter.id %}">Delete</a>
+            </div>
+        {% endif %}
+
+        {# Each article in full, so the newsletter reads from top to bottom. #}
+        {% for article in articles %}
+            {% include 'news/includes/article_preview.html' with link=True %}
+        {% empty %}
+            <p class="note">This newsletter has no articles yet.</p>
+        {% endfor %}
+    </article>
+{% endblock content %}

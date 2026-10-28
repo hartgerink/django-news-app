@@ -1,0 +1,20 @@
+{% extends 'form_page.html' %}
+
+{# Used for both writing a new article and editing one, given as "article". #}
+
+{% block title %}{% if article %}Edit{% else %}New{% endif %} Article{% endblock title %}
+{% block width %} form-card-wide{% endblock width %}
+{% block heading %}{% if article %}Edit{% else %}New{% endif %} Article{% endblock heading %}
+{% block intro %}
+    <p class="note">
+        {% if article.approved %}
+            This article is approved. Your changes are visible to everyone as soon as you save them.
+        {% else %}
+            Until it is approved, only its author, or for a publication article its staff, can read it.
+        {% endif %}
+    </p>
+    {% if article %}
+        <p><strong>Publication:</strong> {{ article.publication.name|default:"Independent" }}</p>
+    {% endif %}
+{% endblock intro %}
+{% block button %}{% if article %}Save Changes{% else %}Save Article{% endif %}{% endblock button %}

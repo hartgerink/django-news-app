@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}{{ publication.name }}{% endblock title %}
+{% block content %}
+    <h2>{{ publication.name }}</h2>
+    <p class="meta">Owned by {{ publication.owner }}</p>
+    <p>{{ publication.description }}</p>
+
+    {% if can_manage or user.role == user.READER %}
+        <div class="actions">
+            {% if can_manage %}
+                <a class="button" href="{% url 'news:edit_publication' publication.id %}">Edit</a>
+                <a class="button button-danger" href="{% url 'news:delete_publication' publication.id %}">Delete</a>
+            {% else %}
+                {% url 'news:publication_subscription' publication.id as url %}
+                {% include 'news/includes/subscribe_form.html' with subscribed=subscribed_to_publication %}
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <h3>Staff</h3>
+    <div class="cards">
+        <div class="card">
+            <h3>Editors</h3>
+            <p>{{ editors|join:", "|default:"None yet." }}</p>
+        </div>
+        <div class="card">
+            <h3>Journalists</h3>
+            <p>{{ journalists|join:", "|default:"None yet." }}</p>
+        </div>
+    </div>
+
+    {# Only the publication's staff see its pending articles, and can change its content. #}
+    {% if sees_pending %}
+        <h3>Pending Articles</h3>
+        {% if pending_articles %}
+            <ul class="item-list">
+                {% for article in pending_articles %}
+                    {% include 'news/includes/article_row.html' with show_author=True manage=True %}
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p class="note">There are no pending articles.</p>
+        {% endif %}
+    {% endif %}
+
+    <h3>Approved Articles</h3>
+    {% if approved_articles %}
+        <ul class="item-list">
+            {% for article in approved_articles %}
+                {% include 'news/includes/article_row.html' with show_author=True manage=sees_pending %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">There are no approved articles yet.</p>
+    {% endif %}
+
+    <h3>Newsletters</h3>
+    {% if newsletters %}
+        <ul class="item-list">
+            {% for newsletter in newsletters %}
+                {% include 'news/includes/newsletter_row.html' with show_author=True manage=sees_pending %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">There are no newsletters yet.</p>
+    {% endif %}
+{% endblock content %}

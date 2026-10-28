@@ -1,0 +1,13 @@
+{% extends 'form_page.html' %}
+
+{# Used for both creating a publication and editing one, given as "publication". #}
+
+{% block title %}{% if publication %}Edit{% else %}New{% endif %} Publication{% endblock title %}
+{% block width %} form-card-wide{% endblock width %}
+{% block heading %}{% if publication %}Edit{% else %}New{% endif %} Publication{% endblock heading %}
+{% block intro %}
+    <p class="note">
+        You own the publications you create. Choose the editors and journalists who work for it.
+    </p>
+{% endblock intro %}
+{% block button %}{% if publication %}Save Changes{% else %}Create Publication{% endif %}{% endblock button %}

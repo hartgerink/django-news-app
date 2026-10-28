@@ -1,0 +1,18 @@
+{% extends 'form_page.html' %}
+
+{# Used for both putting together a new newsletter and editing one, given as "newsletter". #}
+
+{% block title %}{% if newsletter %}Edit{% else %}New{% endif %} Newsletter{% endblock title %}
+{% block width %} form-card-wide{% endblock width %}
+{% block heading %}{% if newsletter %}Edit{% else %}New{% endif %} Newsletter{% endblock heading %}
+{% block intro %}
+    <p class="note">
+        A newsletter is a collection of approved articles that everyone can read. An independent
+        newsletter can include only your own independent articles. A publication's newsletter can
+        include any of that publication's articles.
+    </p>
+    {% if newsletter %}
+        <p><strong>Publication:</strong> {{ newsletter.publication.name|default:"Independent" }}</p>
+    {% endif %}
+{% endblock intro %}
+{% block button %}{% if newsletter %}Save Changes{% else %}Save Newsletter{% endif %}{% endblock button %}

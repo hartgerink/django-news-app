@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% comment %}
+    The page shared by every form and every confirmation, such as Log In,
+    New Article, or Delete Article: a box with a heading, an
+    introduction, the form's fields, one button, and a Cancel link.
+
+    The form posts back to the page's own address, so one template
+    serves both creating and editing. A page extends this template and
+    fills in these blocks:
+    - heading: for example "New Article".
+    - intro: text above the form. Empty by default.
+    - fields: the form's fields. A confirmation page empties it.
+    - button: the button's label, for example "Save Article".
+    - button_class: "button-danger" for a red Delete button.
+    - links: the links under the form. Cancel by default.
+    - width: " form-card-wide" for a wider box.
+{% endcomment %}
+
+{% block content %}
+    <div class="form-card{% block width %}{% endblock width %}">
+        <h2>{% block heading %}{% endblock heading %}</h2>
+        {% block intro %}{% endblock intro %}
+        <form method="post">
+            {% csrf_token %}
+            {% block fields %}{% include 'form_fields.html' %}{% endblock fields %}
+            <button class="button {% block button_class %}button-primary{% endblock button_class %}" type="submit">
+                {% block button %}{% endblock button %}
+            </button>
+        </form>
+        {% block links %}
+            <p class="form-links"><a href="{% url 'news:dashboard' %}">Cancel</a></p>
+        {% endblock links %}
+    </div>
+{% endblock content %}

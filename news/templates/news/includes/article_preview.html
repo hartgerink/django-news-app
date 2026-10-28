@@ -1,0 +1,21 @@
+{% comment %}
+    An article's title, details, and content in a shaded box, such as
+    before it is approved or deleted, or as part of a newsletter. Include
+    it with link=True to make the title a link to the article's page.
+    The "linebreaks" filter shows each paragraph as its own paragraph.
+{% endcomment %}
+<div class="preview">
+    <h3>
+        {% if link %}
+            <a href="{% url 'news:article_detail' article.id %}">{{ article.title }}</a>
+        {% else %}
+            {{ article.title }}
+        {% endif %}
+    </h3>
+    <p class="meta">
+        {{ article.author }} &middot;
+        {{ article.publication.name|default:"Independent" }} &middot;
+        {{ article.created_at|date:"j M Y" }}
+    </p>
+    {{ article.content|linebreaks }}
+</div>

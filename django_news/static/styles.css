@@ -1,0 +1,446 @@
+/*
+ * Django News: the site's styles.
+ *
+ * A header bar, one centered column, and a blue-green accent. Every
+ * color is defined once, in the first section.
+ */
+
+/* ---------- Colors ---------- */
+
+:root {
+    --background: #f4f6f8;
+    --surface: #ffffff;
+    --text: #23313f;
+    --muted: #5f6f7f;
+    --border: #dde3e8;
+    --accent: #2a7f8f;
+    --accent-dark: #1f6371;
+    --error: #b3403a;
+}
+
+/* ---------- Page ---------- */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--background);
+    color: var(--text);
+    font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.6;
+}
+
+a {
+    color: var(--accent);
+}
+
+/* The header and the page's content share one centered width. */
+.container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+main {
+    padding-bottom: 48px;
+}
+
+h2 {
+    font-size: 30px;
+}
+
+h3 {
+    margin-top: 36px;
+    font-size: 20px;
+}
+
+/* Quieter text, such as an article's author and date. */
+.meta {
+    color: var(--muted);
+    font-size: 15px;
+}
+
+/* A short aside, such as "You have no pending articles." */
+.note {
+    color: var(--muted);
+    font-style: italic;
+}
+
+/* ---------- Header ---------- */
+
+header {
+    background: var(--accent);
+}
+
+header .container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 24px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 24px;
+}
+
+header nav {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+}
+
+header a {
+    color: #ffffff;
+    text-decoration: none;
+}
+
+header a:hover {
+    text-decoration: underline;
+}
+
+/* The round account button, which opens the account menu. */
+.account-button {
+    padding: 4px 12px;
+    border: 2px solid #ffffff;
+    border-radius: 16px;
+    background: none;
+    color: #ffffff;
+    font: inherit;
+    cursor: pointer;
+}
+
+/* The account menu, a pop-up placed under the account button. */
+.account-menu {
+    inset: auto;
+    top: 64px;
+    right: max(20px, calc(50vw - 460px));
+    margin: 0;
+    min-width: 200px;
+    padding: 8px 0;
+}
+
+/* Where the browser supports it, the menu hangs from the account button
+   itself, so it stays under the button when the header wraps onto two
+   lines on a narrow screen. */
+@supports (anchor-name: --account) {
+    .account-button {
+        anchor-name: --account;
+    }
+
+    .account-menu {
+        position-anchor: --account;
+        top: calc(anchor(bottom) + 8px);
+        right: anchor(right);
+    }
+}
+
+.account-menu p {
+    margin: 0;
+    padding: 0 16px 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Each choice in the menu, whether a link or the Log Out button. */
+.account-menu a,
+.account-menu button {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.account-menu a:hover,
+.account-menu button:hover {
+    background: var(--background);
+}
+
+/* ---------- Boxes ---------- */
+
+/* The white box shared by cards, lists, forms, articles, and pop-ups. */
+.card,
+.item-list,
+.form-card,
+.article-page,
+.messages li,
+[popover] {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    box-shadow: 0 1px 3px rgba(35, 49, 63, 0.06);
+}
+
+/* Boxes in a grid, as many per row as fit. */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.card {
+    padding: 16px 18px;
+}
+
+.card h3 {
+    margin: 0 0 6px;
+    color: var(--accent-dark);
+    font-size: 17px;
+}
+
+.card p {
+    margin: 0 0 6px;
+    color: var(--muted);
+}
+
+/* A list of items, one per row: its text on the left and its buttons
+   on the right. */
+.item-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.item-list li {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px 16px;
+    padding: 12px 18px;
+    border-top: 1px solid var(--border);
+}
+
+.item-list li:first-child {
+    border-top: none;
+}
+
+/* A row's title, with its details on the line below. */
+.item-list .meta {
+    display: block;
+}
+
+.item-list .actions {
+    margin: 0;
+}
+
+/* A small rounded label, such as a count or "Subscribed". */
+.badge {
+    padding: 0 8px;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 400;
+}
+
+/* The confirmations shown at the top of a page. */
+.messages {
+    margin: 24px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.messages li {
+    padding: 10px 14px;
+    border-left: 4px solid var(--accent);
+}
+
+/* ---------- Buttons ---------- */
+
+/* Used on links and on buttons alike. */
+.button {
+    display: inline-block;
+    padding: 8px 20px;
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--accent);
+    font: inherit;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.button:hover {
+    border-color: var(--accent-dark);
+    background: var(--accent-dark);
+    color: #ffffff;
+}
+
+/* The main action on a page, filled in. */
+.button-primary {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+/* An action that cannot be undone, such as Delete. */
+.button-danger,
+.button-danger:hover {
+    border-color: var(--error);
+    background: var(--error);
+    color: #ffffff;
+}
+
+.button-danger:hover {
+    filter: brightness(0.85);
+}
+
+/* A smaller button that fits in a row or card. */
+.button-small {
+    padding: 2px 12px;
+    font-size: 15px;
+}
+
+/* A row of buttons that wraps on narrow screens. */
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+/* A form that holds only a button, such as Subscribe, sits in line. */
+.actions form {
+    display: inline;
+}
+
+/* ---------- Articles ---------- */
+
+/* A page or card for reading a whole article. */
+.article-page {
+    max-width: 760px;
+    margin: 24px auto 0;
+    padding: 24px 32px;
+}
+
+.article-page h2 {
+    margin: 0;
+}
+
+.article-body {
+    font-size: 18px;
+    line-height: 1.7;
+}
+
+/* An article or newsletter shown for checking, such as before it is
+   approved or deleted. */
+.preview {
+    margin: 16px 0 24px;
+    padding: 16px 20px;
+    border-radius: 6px;
+    background: var(--background);
+}
+
+.preview h3 {
+    margin: 0;
+}
+
+/* ---------- Forms ---------- */
+
+/* A centered box holding a form or a short message. */
+.form-card {
+    max-width: 420px;
+    margin: 32px auto 0;
+    padding: 4px 28px 24px;
+}
+
+.form-card-wide {
+    max-width: 760px;
+}
+
+/* A form's buttons fill its width. */
+.form-card .button {
+    width: 100%;
+    text-align: center;
+}
+
+/* The small links under a form, such as Cancel. */
+.form-links {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 15px;
+}
+
+.field {
+    margin-bottom: 16px;
+}
+
+/* A field's label, with the "i" button beside it when the field has
+   requirements. */
+.label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+.form-card input,
+.form-card select,
+.form-card textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
+}
+
+/* A list of checkboxes, such as a newsletter's articles: each checkbox
+   keeps its normal size, beside its text. */
+.form-card input[type="checkbox"] {
+    width: auto;
+    margin-right: 8px;
+}
+
+.form-card label:has(> input[type="checkbox"]) {
+    display: block;
+    margin-bottom: 6px;
+}
+
+/* The errors Django lists for a field or for the whole form. */
+.errorlist {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-left: 4px solid var(--error);
+    background: #fbeeed;
+    color: var(--error);
+    list-style: none;
+}
+
+/* The small round "i" button that opens a field's requirements. */
+.info-button {
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: 1px solid var(--accent);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--accent);
+    font: italic 600 13px/1 Georgia, serif;
+    cursor: pointer;
+}
+
+/* The pop-up the "i" button opens, centered on the screen. */
+.help-popover {
+    max-width: 380px;
+    padding: 20px 22px;
+}
+
+.help-popover::backdrop {
+    background: rgba(35, 49, 63, 0.25);
+}
+
+.help-popover h3 {
+    margin: 0 0 8px;
+}

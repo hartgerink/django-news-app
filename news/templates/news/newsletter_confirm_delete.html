@@ -1,0 +1,28 @@
+{% extends 'form_page.html' %}
+{% block title %}Delete Newsletter{% endblock title %}
+{% block width %} form-card-wide{% endblock width %}
+{% block heading %}Delete Newsletter{% endblock heading %}
+{% block intro %}
+    <p>
+        Are you sure you want to delete this newsletter? This cannot be undone. The articles in it
+        are not deleted.
+    </p>
+    <div class="preview">
+        <h3>{{ newsletter.title }}</h3>
+        <p class="meta">
+            {{ newsletter.publication.name|default:"Independent" }} &middot;
+            {{ newsletter.created_at|date:"j M Y" }}
+        </p>
+        {{ newsletter.description|linebreaks }}
+        <ul>
+            {% for article in articles %}
+                <li>{{ article.title }} <span class="meta">by {{ article.author }}</span></li>
+            {% empty %}
+                <li class="note">It has no articles.</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock intro %}
+{% block fields %}{% endblock fields %}
+{% block button_class %}button-danger{% endblock button_class %}
+{% block button %}Delete Newsletter{% endblock button %}

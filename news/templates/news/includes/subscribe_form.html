@@ -1,0 +1,19 @@
+{% comment %}
+    A Subscribe or Unsubscribe button for a journalist or a publication.
+    Include it with:
+    - url: the address of its subscription view.
+    - subscribed: True if the reader is already subscribed, which shows
+      Unsubscribe.
+    - small: True for a small button.
+    The reader is sent back to the page they are on.
+{% endcomment %}
+<form method="post" action="{{ url }}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    {% if subscribed %}
+        <input type="hidden" name="action" value="unsubscribe">
+        <button class="button{% if small %} button-small{% endif %}" type="submit">Unsubscribe</button>
+    {% else %}
+        <button class="button button-primary{% if small %} button-small{% endif %}" type="submit">Subscribe</button>
+    {% endif %}
+</form>

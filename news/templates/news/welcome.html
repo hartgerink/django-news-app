@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Welcome{% endblock title %}
+{% block content %}
+    <h2>Welcome to Django News</h2>
+    <p>
+        Django News brings together articles from news publications and from independent
+        journalists. Every article is approved before readers can see it.
+    </p>
+    <p>To read articles and newsletters, log in or register a free account.</p>
+
+    <h3>Choose the account that fits you</h3>
+    <div class="cards">
+        <div class="card">
+            <h3>Reader</h3>
+            <p>
+                Read approved articles and newsletters. Subscribe to publications and journalists,
+                and receive an email whenever one of them has a new article approved.
+            </p>
+        </div>
+        <div class="card">
+            <h3>Journalist</h3>
+            <p>
+                Write articles and newsletters, independently or for the publications you work
+                for. You approve your own independent articles.
+            </p>
+        </div>
+        <div class="card">
+            <h3>Editor</h3>
+            <p>
+                Review the articles of the publications you work for, then approve, edit, or
+                delete them.
+            </p>
+        </div>
+        <div class="card">
+            <h3>Publisher</h3>
+            <p>Create and own publications, and choose the editors and journalists who work for them.</p>
+        </div>
+    </div>
+{% endblock content %}

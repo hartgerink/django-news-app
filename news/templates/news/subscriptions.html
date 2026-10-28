@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Subscriptions{% endblock title %}
+{% block content %}
+    <h2>Subscriptions</h2>
+    <p>
+        You are emailed each new article from the publications you are subscribed to, and each
+        new independent article from the journalists. They also appear on your dashboard.
+    </p>
+
+    <h3>Publications</h3>
+    {% if publications %}
+        <ul class="item-list">
+            {% for publication in publications %}
+                <li>
+                    <a href="{% url 'news:publication_detail' publication.id %}">{{ publication.name }}</a>
+                    {% url 'news:publication_subscription' publication.id as url %}
+                    {% include 'news/includes/subscribe_form.html' with subscribed=True small=True %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">
+            You are not subscribed to any publications.
+            <a href="{% url 'news:publication_list' %}">Browse publications</a>
+        </p>
+    {% endif %}
+
+    <h3>Journalists</h3>
+    {% if journalists %}
+        <ul class="item-list">
+            {% for journalist in journalists %}
+                <li>
+                    <a href="{% url 'news:journalist_detail' journalist.id %}">{{ journalist.username }}</a>
+                    {% url 'news:journalist_subscription' journalist.id as url %}
+                    {% include 'news/includes/subscribe_form.html' with subscribed=True small=True %}
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">
+            You are not subscribed to any journalists.
+            <a href="{% url 'news:journalist_list' %}">Browse journalists</a>
+        </p>
+    {% endif %}
+{% endblock content %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Journalists{% endblock title %}
+{% block content %}
+    <h2>Journalists</h2>
+    {% if journalists %}
+        <div class="cards">
+            {% for journalist in journalists %}
+                <div class="card">
+                    <h3>
+                        {{ journalist.username }}
+                        {% if journalist.id in subscribed_ids %}<span class="badge">Subscribed</span>{% endif %}
+                    </h3>
+                    <p>
+                        {% for publication in journalist.journalist_publications.all %}
+                            {% if forloop.first %}Works for{% endif %}
+                            {{ publication.name }}{% if not forloop.last %},{% endif %}
+                        {% empty %}
+                            Independent
+                        {% endfor %}
+                    </p>
+                    <p class="meta">
+                        {{ journalist.approved_count }} approved article{{ journalist.approved_count|pluralize }}
+                    </p>
+                    <div class="actions">
+                        <a class="button button-small" href="{% url 'news:journalist_detail' journalist.id %}">View</a>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="note">There are no journalists yet.</p>
+    {% endif %}
+{% endblock content %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}{{ journalist.username }}{% endblock title %}
+{% block content %}
+    <h2>{{ journalist.username }}</h2>
+    <p class="meta">
+        Journalist &middot;
+        {% for publication in publications %}
+            {% if forloop.first %}Works for{% endif %}
+            <a href="{% url 'news:publication_detail' publication.id %}">{{ publication.name }}</a>{% if not forloop.last %},{% endif %}
+        {% empty %}
+            Independent
+        {% endfor %}
+    </p>
+
+    {% if user.role == user.READER %}
+        <div class="actions">
+            {% url 'news:journalist_subscription' journalist.id as url %}
+            {% include 'news/includes/subscribe_form.html' with subscribed=subscribed_to_journalist %}
+        </div>
+    {% endif %}
+
+    <h3>Independent Articles</h3>
+    <p class="meta">A subscription to {{ journalist.username }} covers these articles.</p>
+    {% if approved_articles %}
+        <ul class="item-list">
+            {% for article in approved_articles %}
+                {% include 'news/includes/article_row.html' %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">{{ journalist.username }} has no approved independent articles yet.</p>
+    {% endif %}
+{% endblock content %}

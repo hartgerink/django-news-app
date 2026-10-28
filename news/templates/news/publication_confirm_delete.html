@@ -1,0 +1,20 @@
+{% extends 'form_page.html' %}
+{% block title %}Delete Publication{% endblock title %}
+{% block width %} form-card-wide{% endblock width %}
+{% block heading %}Delete Publication{% endblock heading %}
+{% block intro %}
+    <p>Are you sure you want to delete <strong>{{ publication.name }}</strong>? This cannot be undone.</p>
+    <ul>
+        <li>
+            Its {{ article_count }} article{{ article_count|pluralize }} will become independent
+            articles of their authors, and keep their approval. A pending article's author can then
+            approve it.
+        </li>
+        <li>Its {{ newsletter_count }} newsletter{{ newsletter_count|pluralize }} will be deleted.</li>
+        <li>Its {{ subscriber_count }} subscriber{{ subscriber_count|pluralize }} will be unsubscribed.</li>
+        <li>Its editors and journalists will no longer work for it.</li>
+    </ul>
+{% endblock intro %}
+{% block fields %}{% endblock fields %}
+{% block button_class %}button-danger{% endblock button_class %}
+{% block button %}Delete Publication{% endblock button %}

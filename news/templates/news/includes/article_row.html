@@ -1,0 +1,31 @@
+{% comment %}
+    One article in a list: its title, its details, and its buttons.
+    Include it inside <ul class="item-list">, where "article" is the
+    current article, with any of these:
+    - show_author: True to show the author.
+    - show_publication: True to show the publication, or "Independent".
+    - manage: True for Edit and Delete buttons.
+    - approve: True for an Approve button.
+{% endcomment %}
+<li>
+    <span>
+        {{ article.title }}
+        <span class="meta">
+            {% if show_author %}{{ article.author }} &middot;{% endif %}
+            {% if show_publication %}{{ article.publication.name|default:"Independent" }} &middot;{% endif %}
+            {{ article.created_at|date:"j M Y" }}
+        </span>
+    </span>
+    <span class="actions">
+        <a class="button button-small" href="{% url 'news:article_detail' article.id %}">Read</a>
+        {% if manage %}
+            <a class="button button-small" href="{% url 'news:edit_article' article.id %}">Edit</a>
+        {% endif %}
+        {% if approve %}
+            <a class="button button-small button-primary" href="{% url 'news:approve_article' article.id %}">Approve</a>
+        {% endif %}
+        {% if manage %}
+            <a class="button button-small button-danger" href="{% url 'news:delete_article' article.id %}">Delete</a>
+        {% endif %}
+    </span>
+</li>

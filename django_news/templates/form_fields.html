@@ -1,0 +1,26 @@
+{% comment %}
+    Draws every field of "form": its label, its errors, and its input. A
+    field's requirements (its help text) open in a pop-up from a small
+    "i" button beside the label, instead of filling space under it.
+{% endcomment %}
+{{ form.non_field_errors }}
+{% for field in form %}
+    <div class="field">
+        <div class="label-row">
+            {{ field.label_tag }}
+            {% if field.help_text %}
+                <button class="info-button" type="button" popovertarget="{{ field.auto_id }}_helptext"
+                        aria-label="Requirements for {{ field.label }}">i</button>
+            {% endif %}
+        </div>
+        {{ field.errors }}
+        {{ field }}
+        {% if field.help_text %}
+            {# Its id matches the input's aria-describedby, so screen readers still read it. #}
+            <div class="help-popover" id="{{ field.auto_id }}_helptext" popover>
+                <h3>{{ field.label }}</h3>
+                {{ field.help_text }}
+            </div>
+        {% endif %}
+    </div>
+{% endfor %}

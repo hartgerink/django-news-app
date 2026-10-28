@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Account{% endblock title %}
+{% block content %}
+    <h2>Account</h2>
+    <div class="cards">
+        <div class="card">
+            <h3>Username</h3>
+            <p>{{ user.username }}</p>
+        </div>
+        <div class="card">
+            <h3>Email Address</h3>
+            <p>{{ user.email }}</p>
+        </div>
+        <div class="card">
+            <h3>Role</h3>
+            <p>{{ user.get_role_display }}</p>
+        </div>
+    </div>
+    <div class="actions">
+        <a class="button" href="{% url 'password_change' %}">Change Password</a>
+    </div>
+{% endblock content %}

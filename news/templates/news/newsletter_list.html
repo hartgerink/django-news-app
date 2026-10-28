@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Newsletters{% endblock title %}
+{% block content %}
+    <h2>Newsletters</h2>
+    {% if newsletters %}
+        <ul class="item-list">
+            {% for newsletter in newsletters %}
+                {% include 'news/includes/newsletter_row.html' with show_author=True show_publication=True show_count=True %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">There are no newsletters yet.</p>
+    {% endif %}
+{% endblock content %}

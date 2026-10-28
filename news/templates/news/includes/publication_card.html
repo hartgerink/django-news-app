@@ -1,0 +1,31 @@
+{% comment %}
+    One publication as a card. Include it inside <div class="cards">,
+    where "publication" is the current publication, with:
+    - manage: True on the publisher's dashboard, to show the staff
+      counts, with Edit and Delete buttons. Otherwise the card shows the
+      owner. Both show the number of approved articles.
+    "subscribed_ids" marks the publications a reader is subscribed to.
+{% endcomment %}
+<div class="card">
+    <h3>
+        {{ publication.name }}
+        {% if publication.id in subscribed_ids %}<span class="badge">Subscribed</span>{% endif %}
+    </h3>
+    <p>{{ publication.description }}</p>
+    <p class="meta">
+        {% if manage %}
+            {{ publication.editor_count }} editor{{ publication.editor_count|pluralize }} &middot;
+            {{ publication.journalist_count }} journalist{{ publication.journalist_count|pluralize }} &middot;
+        {% else %}
+            Owned by {{ publication.owner }} &middot;
+        {% endif %}
+        {{ publication.approved_count }} approved article{{ publication.approved_count|pluralize }}
+    </p>
+    <div class="actions">
+        <a class="button button-small" href="{% url 'news:publication_detail' publication.id %}">View</a>
+        {% if manage %}
+            <a class="button button-small" href="{% url 'news:edit_publication' publication.id %}">Edit</a>
+            <a class="button button-small button-danger" href="{% url 'news:delete_publication' publication.id %}">Delete</a>
+        {% endif %}
+    </div>
+</div>

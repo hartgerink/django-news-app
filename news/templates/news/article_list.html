@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Articles{% endblock title %}
+{% block content %}
+    <h2>Articles</h2>
+    <p class="meta">Every approved article, from every publication and journalist, newest first.</p>
+    {% if articles %}
+        <ul class="item-list">
+            {% for article in articles %}
+                {% include 'news/includes/article_row.html' with show_author=True show_publication=True %}
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="note">There are no approved articles yet.</p>
+    {% endif %}
+{% endblock content %}

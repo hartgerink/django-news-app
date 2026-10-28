@@ -1,0 +1,61 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{% endblock title %} | Django News</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1><a href="{% url 'news:welcome' %}">Django News</a></h1>
+            <nav>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'news:dashboard' %}">Dashboard</a>
+                    <a href="{% url 'news:publication_list' %}">Publications</a>
+                    <a href="{% url 'news:journalist_list' %}">Journalists</a>
+                    <a href="{% url 'news:newsletter_list' %}">Newsletters</a>
+                    <a href="{% url 'news:article_list' %}">Articles</a>
+                    {# Opens the account menu below. #}
+                    <button class="account-button" type="button" popovertarget="account-menu">
+                        {{ user.username }}
+                    </button>
+                {% else %}
+                    <a href="{% url 'news:welcome' %}">Home</a>
+                    <a href="{% url 'login' %}">Log In</a>
+                    <a href="{% url 'accounts:register' %}">Register</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    {% if user.is_authenticated %}
+        {# The account menu. The browser opens and closes it. #}
+        <div class="account-menu" id="account-menu" popover>
+            <p>{{ user.get_role_display }}</p>
+            <a href="{% url 'accounts:account' %}">Account</a>
+            {% if user.role == user.READER %}
+                <a href="{% url 'news:subscriptions' %}">Subscriptions</a>
+            {% endif %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">Log Out</button>
+            </form>
+        </div>
+    {% endif %}
+
+    <main class="container">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li>{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% block content %}{% endblock content %}
+    </main>
+</body>
+</html>

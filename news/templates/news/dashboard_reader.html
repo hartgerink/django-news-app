@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock title %}
+{% block content %}
+    <h2>Reader Dashboard</h2>
+
+    <h3>From Your Subscriptions</h3>
+    <p class="meta">
+        You are subscribed to {{ publication_count }} publication{{ publication_count|pluralize }}
+        and {{ journalist_count }} journalist{{ journalist_count|pluralize }}.
+        <a href="{% url 'news:subscriptions' %}">Manage subscriptions</a>
+    </p>
+    {% if subscribed_articles %}
+        <ul class="item-list">
+            {% for article in subscribed_articles %}
+                {% include 'news/includes/article_row.html' with show_author=True show_publication=True %}
+            {% endfor %}
+        </ul>
+    {% elif publication_count or journalist_count %}
+        <p class="note">Your subscriptions have no approved articles yet.</p>
+    {% else %}
+        <p class="note">
+            You are not subscribed to anything yet. Browse
+            <a href="{% url 'news:publication_list' %}">Publications</a> or
+            <a href="{% url 'news:journalist_list' %}">Journalists</a> to find some.
+        </p>
+    {% endif %}
+{% endblock content %}

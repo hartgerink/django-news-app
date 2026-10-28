@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock title %}
+{% block content %}
+    <h2>Publisher Dashboard</h2>
+    <div class="actions">
+        <a class="button button-primary" href="{% url 'news:create_publication' %}">+ New Publication</a>
+    </div>
+
+    <h3>My Publications <span class="badge">{{ publications|length }}</span></h3>
+    {% if publications %}
+        <div class="cards">
+            {% for publication in publications %}
+                {% include 'news/includes/publication_card.html' with manage=True %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="note">You don't own any publications yet.</p>
+    {% endif %}
+{% endblock content %}

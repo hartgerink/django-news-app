@@ -1,0 +1,14 @@
+{% extends 'form_page.html' %}
+{% block title %}Approve Article{% endblock title %}
+{% block width %} form-card-wide{% endblock width %}
+{% block heading %}Approve Article{% endblock heading %}
+{% block intro %}
+    <p>
+        Once approved, this article can be read by everyone, and it is emailed to the readers
+        subscribed to {% if article.publication %}{{ article.publication.name }}{% else %}{{ article.author }}{% endif %}.
+        Approval cannot be undone.
+    </p>
+    {% include 'news/includes/article_preview.html' %}
+{% endblock intro %}
+{% block fields %}{% endblock fields %}
+{% block button %}Approve Article{% endblock button %}

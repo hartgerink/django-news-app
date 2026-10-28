@@ -1,0 +1,16 @@
+{% extends 'form_page.html' %}
+{% block title %}Delete Article{% endblock title %}
+{% block width %} form-card-wide{% endblock width %}
+{% block heading %}Delete Article{% endblock heading %}
+{% block intro %}
+    <p>
+        Are you sure you want to delete this article? This cannot be undone.
+        {% if newsletter_count %}
+            It will also be removed from {{ newsletter_count }} newsletter{{ newsletter_count|pluralize }}.
+        {% endif %}
+    </p>
+    {% include 'news/includes/article_preview.html' %}
+{% endblock intro %}
+{% block fields %}{% endblock fields %}
+{% block button_class %}button-danger{% endblock button_class %}
+{% block button %}Delete Article{% endblock button %}

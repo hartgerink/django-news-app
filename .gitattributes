@@ -1,0 +1,8 @@
+# .gitattributes for django-news-app
+#
+# Text files are stored with LF line endings, and checked out with LF on
+# every system, including Windows. This overrides each person's own
+# core.autocrlf setting, so the files are the same everywhere, and a
+# shell script copied into a Docker image still runs on Linux. Git
+# detects binary files itself and leaves them unchanged.
+* text=auto eol=lf
