@@ -52,4 +52,5 @@ language = "en"
 
 # -- Options for HTML output -------------------------------------------
 
-html_theme = "alabaster"
+# The Read the Docs theme, installed from requirements.txt.
+html_theme = "sphinx_rtd_theme"
