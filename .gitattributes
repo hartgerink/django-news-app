@@ -6,3 +6,7 @@
 # shell script copied into a Docker image still runs on Linux. Git
 # detects binary files itself and leaves them unchanged.
 * text=auto eol=lf
+
+# Windows batch files, such as docs/make.bat, keep CRLF line endings,
+# because cmd can misread their labels with LF.
+*.bat text eol=crlf
