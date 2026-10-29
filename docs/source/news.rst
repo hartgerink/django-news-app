@@ -59,3 +59,12 @@ Management commands
 .. automodule:: news.management.commands.delete_all_data
 
 .. automodule:: news.management.commands.drop_all_tables
+
+Demo data
+---------
+
+The data itself is long, so these entries show what each part is for,
+not its contents. See ``_demo_data.py`` for the full data.
+
+.. automodule:: news.management.commands._demo_data
+   :no-value:

@@ -1,21 +1,29 @@
-# Delete all data
-# ---------------
-# Deletes every user, publication, article, and newsletter, every
-# article the simulated third party received, and every login session,
-# so the site can start again from empty. The groups and their
-# permissions are kept, since they are setup rather than data.
-#
-# How to run it
-# -------------
-# From the folder that contains manage.py:
-#     python manage.py delete_all_data
-# It asks you to type "yes" before deleting anything. To skip the
-# question:
-#     python manage.py delete_all_data --no-input
-# To fill the database again afterward:
-#     python manage.py seed_demo_data
-#
-# It only runs while DEBUG is True, so it cannot empty a live site.
+"""
+The ``delete_all_data`` management command.
+
+Deletes every user, publication, article, and newsletter, every
+article the simulated third party received, and every login session,
+so the site can start again from empty. The groups and their
+permissions are kept, since they are setup rather than data.
+
+.. rubric:: How to run it
+
+From the folder that contains ``manage.py``::
+
+    python manage.py delete_all_data
+
+It asks you to type ``yes`` before deleting anything. To skip the
+question::
+
+    python manage.py delete_all_data --no-input
+
+To fill the database again afterward::
+
+    python manage.py seed_demo_data
+
+It only runs while ``DEBUG`` is ``True``, so it cannot empty a live
+site.
+"""
 
 from django.conf import settings
 from django.contrib.sessions.models import Session
@@ -32,12 +40,13 @@ class Command(BaseCommand):
     Delete every user, publication, article, newsletter, third-party
     article, and login session.
 
-    Run it with:
+    Run it with::
+
         python manage.py delete_all_data
 
-    Superusers are deleted too; seed_demo_data makes the admin
+    Superusers are deleted too; ``seed_demo_data`` makes the admin
     superuser again. The groups and their permissions are kept, so
-    seed_demo_data can be run straight afterward.
+    ``seed_demo_data`` can be run straight afterward.
     """
 
     help = (
@@ -48,7 +57,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """
-        Add the --no-input option, which skips the "yes" question.
+        Add the ``--no-input`` option, which skips the ``yes`` question.
 
         :param parser: The command's argument parser, from Django.
         """
@@ -64,8 +73,12 @@ class Command(BaseCommand):
         """
         Ask for confirmation, then delete everything in one transaction.
 
-        :raises CommandError: If DEBUG is False, or the answer is not
-                              "yes".
+        :param args: Positional arguments from Django. Not used.
+        :param options: The command's options, from Django. The
+            ``interactive`` option is ``False`` when ``--no-input`` is
+            given.
+        :raises CommandError: If ``DEBUG`` is ``False``, or the answer
+                              is not ``yes``.
         """
         if not settings.DEBUG:
             raise CommandError(

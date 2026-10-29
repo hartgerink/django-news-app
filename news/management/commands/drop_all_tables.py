@@ -1,25 +1,32 @@
-# Drop all tables
-# ---------------
-# Deletes every table in the project's database: all the site's data,
-# Django's own tables, and the records of which migrations have run.
-# The database itself is kept, and so are the MariaDB account's rights
-# to it, so nothing needs setting up again in MariaDB.
-#
-# Afterward, the database is empty, and the site cannot run until the
-# tables are rebuilt. The usual steps from there:
-#     python manage.py migrate_all
-#     python manage.py setup_groups_and_permissions
-#     python manage.py seed_demo_data
-#
-# How to run it
-# -------------
-# From the folder that contains manage.py:
-#     python manage.py drop_all_tables
-# It asks you to type "yes" before deleting anything. To skip the
-# question:
-#     python manage.py drop_all_tables --no-input
-#
-# It only runs while DEBUG is True, so it cannot empty a live site.
+"""
+The ``drop_all_tables`` management command.
+
+Deletes every table in the project's database: all the site's data,
+Django's own tables, and the records of which migrations have run.
+The database itself is kept, and so are the MariaDB account's rights
+to it, so nothing needs setting up again in MariaDB.
+
+Afterward, the database is empty, and the site cannot run until the
+tables are rebuilt. The usual steps from there::
+
+    python manage.py migrate_all
+    python manage.py setup_groups_and_permissions
+    python manage.py seed_demo_data
+
+.. rubric:: How to run it
+
+From the folder that contains ``manage.py``::
+
+    python manage.py drop_all_tables
+
+It asks you to type ``yes`` before deleting anything. To skip the
+question::
+
+    python manage.py drop_all_tables --no-input
+
+It only runs while ``DEBUG`` is ``True``, so it cannot empty a live
+site.
+"""
 
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
@@ -30,7 +37,8 @@ class Command(BaseCommand):
     """
     Delete every table in the project's database.
 
-    Run it with:
+    Run it with::
+
         python manage.py drop_all_tables
 
     The database and the MariaDB account's rights to it are kept.
@@ -43,7 +51,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """
-        Add the --no-input option, which skips the "yes" question.
+        Add the ``--no-input`` option, which skips the ``yes`` question.
 
         :param parser: The command's argument parser, from Django.
         """
@@ -59,9 +67,13 @@ class Command(BaseCommand):
         """
         Ask for confirmation, then delete every table in the database.
 
-        :raises CommandError: If DEBUG is False, the database is not
-                              MariaDB or MySQL, or the answer is not
-                              "yes".
+        :param args: Positional arguments from Django. Not used.
+        :param options: The command's options, from Django. The
+            ``interactive`` option is ``False`` when ``--no-input`` is
+            given.
+        :raises CommandError: If ``DEBUG`` is ``False``, the database is
+                              not MariaDB or MySQL, or the answer is not
+                              ``yes``.
         """
         if not settings.DEBUG:
             raise CommandError(
