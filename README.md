@@ -5,13 +5,21 @@ publications and from independent journalists. Readers can subscribe to the
 publications and journalists they follow, and are emailed each of their new
 articles.
 
-## How Django News Works
+## How the Django News Web Interface Works
 
 A complete tour of what Django News can do, role by role: from writing a
 first article, through an editor's approval, to the email that lands in a
 subscriber's inbox.
 
-[How Django News Works](guide/how-django-news-works.md)
+[How the Django News Web Interface Works](guide/how-the-django-news-web-interface-works.md)
+
+## How the Django News API Works
+
+Django News also has a REST API, for programs that work with its articles:
+listing them, writing them, and approving them, under the same rules as the
+website.
+
+[How the Django News API Works](guide/how-the-django-news-api-works.md)
 
 ## Setting Up the Required MariaDB Server
 

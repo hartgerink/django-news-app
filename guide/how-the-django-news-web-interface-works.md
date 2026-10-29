@@ -1,4 +1,4 @@
-# How Django News Works
+# How the Django News Web Interface Works
 
 Django News is a news website where articles come from two kinds of writers:
 the staff of news publications, and independent journalists who write under
