@@ -1,0 +1,228 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>accounts.management.commands.remove_groups_and_permissions &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">accounts.management.commands.remove_groups_and_permissions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for accounts.management.commands.remove_groups_and_permissions</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The ``remove_groups_and_permissions`` management command.</span>
+
+<span class="sd">Deletes the four role groups that ``setup_groups_and_permissions``</span>
+<span class="sd">creates, which undoes it. Deleting a group also removes its</span>
+<span class="sd">permissions and every user's membership in it. The permissions</span>
+<span class="sd">themselves are kept, because Django creates them from the models, and</span>
+<span class="sd">the user accounts are kept too.</span>
+
+<span class="sd">Until the groups are set up again, no user can be saved, because</span>
+<span class="sd">``User.save()`` needs their role's group to exist.</span>
+
+<span class="sd">.. rubric:: How to run it</span>
+
+<span class="sd">From the folder that contains ``manage.py``::</span>
+
+<span class="sd">    python manage.py remove_groups_and_permissions</span>
+
+<span class="sd">It asks you to type ``yes`` before deleting anything. To skip the</span>
+<span class="sd">question::</span>
+
+<span class="sd">    python manage.py remove_groups_and_permissions --no-input</span>
+
+<span class="sd">To create the groups again afterward::</span>
+
+<span class="sd">    python manage.py setup_groups_and_permissions</span>
+
+<span class="sd">It only runs while ``DEBUG`` is ``True``, so it cannot change a live</span>
+<span class="sd">site.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Group</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.management.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">CommandError</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">accounts.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+
+<div class="viewcode-block" id="Command">
+<a class="viewcode-back" href="../../../../accounts.html#accounts.management.commands.remove_groups_and_permissions.Command">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Delete the Readers, Publishers, Editors, and Journalists groups.</span>
+
+<span class="sd">    Run it with::</span>
+
+<span class="sd">        python manage.py remove_groups_and_permissions</span>
+
+<span class="sd">    Other groups, permissions, and user accounts are not touched.</span>
+<span class="sd">    """</span>
+
+    <span class="n">help</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"Deletes the Readers, Publishers, Editors, and Journalists groups, "</span>
+        <span class="s2">"with their permissions and memberships. Only runs while DEBUG is "</span>
+        <span class="s2">"True."</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="Command.add_arguments">
+<a class="viewcode-back" href="../../../../accounts.html#accounts.management.commands.remove_groups_and_permissions.Command.add_arguments">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Add the ``--no-input`` option, which skips the ``yes`` question.</span>
+
+<span class="sd">        :param parser: The command's argument parser, from Django.</span>
+<span class="sd">        """</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s2">"--no-input"</span><span class="p">,</span>
+            <span class="s2">"--noinput"</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s2">"store_false"</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="s2">"interactive"</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s1">'Delete without asking you to type "yes" first.'</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Command.handle">
+<a class="viewcode-back" href="../../../../accounts.html#accounts.management.commands.remove_groups_and_permissions.Command.handle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Ask for confirmation, then delete the role groups.</span>
+
+<span class="sd">        :param args: Positional arguments from Django. Not used.</span>
+<span class="sd">        :param options: The command's options, from Django. The</span>
+<span class="sd">            ``interactive`` option is ``False`` when ``--no-input`` is</span>
+<span class="sd">            given.</span>
+<span class="sd">        :raises CommandError: If ``DEBUG`` is ``False``, or the answer</span>
+<span class="sd">                              is not ``yes``.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span>
+                <span class="s2">"remove_groups_and_permissions only runs while DEBUG is "</span>
+                <span class="s2">"True, so it cannot change a live site."</span>
+            <span class="p">)</span>
+
+        <span class="c1"># The role groups that exist now. For example:</span>
+        <span class="c1">#     ["Readers", "Publishers", "Editors", "Journalists"]</span>
+        <span class="n">role_groups</span> <span class="o">=</span> <span class="n">Group</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">name__in</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">ROLE_GROUPS</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">role_groups</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s2">"name"</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">names</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"There are no role groups to delete."</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="n">summary</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">names</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s2">"interactive"</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">WARNING</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"This will permanently delete these groups: </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">."</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">'Type "yes" to continue: '</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"yes"</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span><span class="s2">"Cancelled. Nothing was deleted."</span><span class="p">)</span>
+
+        <span class="n">role_groups</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Deleted </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">."</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="s2">"To create them again, run: "</span>
+            <span class="s2">"python manage.py setup_groups_and_permissions"</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

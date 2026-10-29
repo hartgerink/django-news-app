@@ -1,0 +1,357 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>news.forms &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">news.forms</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for news.forms</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The news app's forms: for writing articles, putting together</span>
+<span class="sd">newsletters, and setting up publications.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django</span><span class="w"> </span><span class="kn">import</span> <span class="n">forms</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Q</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">accounts.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.access</span><span class="w"> </span><span class="kn">import</span> <span class="n">articles_for_newsletter</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Article</span><span class="p">,</span> <span class="n">Newsletter</span><span class="p">,</span> <span class="n">Publication</span>
+
+
+<div class="viewcode-block" id="ArticleForm">
+<a class="viewcode-back" href="../../news.html#news.forms.ArticleForm">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ArticleForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">ModelForm</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The form for writing a new article or editing one.</span>
+
+<span class="sd">    A new article can be independent or for a publication its author is</span>
+<span class="sd">    on the staff of. Once the article exists, its publication cannot</span>
+<span class="sd">    change.</span>
+<span class="sd">    """</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Article</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"title"</span><span class="p">,</span> <span class="s2">"content"</span><span class="p">,</span> <span class="s2">"publication"</span><span class="p">]</span>
+        <span class="n">widgets</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"content"</span><span class="p">:</span> <span class="n">forms</span><span class="o">.</span><span class="n">Textarea</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"rows"</span><span class="p">:</span> <span class="mi">16</span><span class="p">}),</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">author</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Builds the form for the article's author, offering only the</span>
+<span class="sd">        publications they are on the staff of.</span>
+
+<span class="sd">        :param args: Passed on to Django's ``ModelForm``, such as the</span>
+<span class="sd">            submitted data.</span>
+<span class="sd">        :param author: The ``User`` writing the article, or its author</span>
+<span class="sd">            when it is being edited.</span>
+<span class="sd">        :param kwargs: Passed on to Django's ``ModelForm``, such as the</span>
+<span class="sd">            ``instance`` being edited.</span>
+<span class="sd">        """</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="c1"># An existing article keeps its publication, so the edit form</span>
+        <span class="c1"># has no publication field. The page shows the publication as</span>
+        <span class="c1"># text.</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">pk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"publication"</span><span class="p">]</span>
+            <span class="k">return</span>
+
+        <span class="n">publication_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"publication"</span><span class="p">]</span>
+
+        <span class="c1"># The empty choice means an independent article.</span>
+        <span class="n">publication_field</span><span class="o">.</span><span class="n">empty_label</span> <span class="o">=</span> <span class="s2">"Independent"</span>
+        <span class="n">publication_field</span><span class="o">.</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">author</span><span class="o">.</span><span class="n">journalist_publications</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span>
+            <span class="s2">"name"</span>
+        <span class="p">)</span>
+        <span class="n">publication_field</span><span class="o">.</span><span class="n">help_text</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"You approve your own independent articles. A "</span>
+            <span class="s2">"publication's editors approve its articles."</span>
+        <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="NewsletterForm">
+<a class="viewcode-back" href="../../news.html#news.forms.NewsletterForm">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">NewsletterForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">ModelForm</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The form for putting together a new newsletter or editing one.</span>
+
+<span class="sd">    A new newsletter can be independent or for a publication its author</span>
+<span class="sd">    is on the staff of. Once the newsletter exists, its publication</span>
+<span class="sd">    cannot change.</span>
+
+<span class="sd">    An independent newsletter can include only its author's approved</span>
+<span class="sd">    independent articles. A publication's newsletter can include only</span>
+<span class="sd">    that publication's approved articles.</span>
+
+<span class="sd">    :ivar author: The newsletter's author, which :meth:`clean` uses to</span>
+<span class="sd">        check the chosen articles.</span>
+<span class="sd">    """</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Newsletter</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"title"</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">,</span> <span class="s2">"publication"</span><span class="p">,</span> <span class="s2">"articles"</span><span class="p">]</span>
+        <span class="n">widgets</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"description"</span><span class="p">:</span> <span class="n">forms</span><span class="o">.</span><span class="n">Textarea</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"rows"</span><span class="p">:</span> <span class="mi">4</span><span class="p">}),</span>
+            <span class="s2">"articles"</span><span class="p">:</span> <span class="n">forms</span><span class="o">.</span><span class="n">CheckboxSelectMultiple</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">author</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Builds the form for the newsletter's author, offering only the</span>
+<span class="sd">        publications and articles they may use.</span>
+
+<span class="sd">        :param args: Passed on to Django's ``ModelForm``, such as the</span>
+<span class="sd">            submitted data.</span>
+<span class="sd">        :param author: The ``User`` putting the newsletter together, or</span>
+<span class="sd">            its author when it is being edited.</span>
+<span class="sd">        :param kwargs: Passed on to Django's ``ModelForm``, such as the</span>
+<span class="sd">            ``instance`` being edited.</span>
+<span class="sd">        """</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">author</span> <span class="o">=</span> <span class="n">author</span>
+
+        <span class="n">articles_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"articles"</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">pk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># An existing newsletter keeps its publication, so the edit</span>
+            <span class="c1"># form has no publication field, and the page shows it as</span>
+            <span class="c1"># text. Only the articles that fit it are offered.</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"publication"</span><span class="p">]</span>
+            <span class="n">articles_field</span><span class="o">.</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">articles_for_newsletter</span><span class="p">(</span>
+                <span class="n">author</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">publication</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># The empty choice means an independent newsletter.</span>
+            <span class="n">publication_field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"publication"</span><span class="p">]</span>
+            <span class="n">publication_field</span><span class="o">.</span><span class="n">queryset</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">author</span><span class="o">.</span><span class="n">journalist_publications</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">publication_field</span><span class="o">.</span><span class="n">empty_label</span> <span class="o">=</span> <span class="s2">"Independent"</span>
+
+            <span class="c1"># Every article the author could use in any of their</span>
+            <span class="c1"># newsletters. The check in clean() makes sure the chosen</span>
+            <span class="c1"># ones fit the chosen publication.</span>
+            <span class="n">articles_field</span><span class="o">.</span><span class="n">queryset</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">approved</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">Q</span><span class="p">(</span><span class="n">author</span><span class="o">=</span><span class="n">author</span><span class="p">,</span> <span class="n">publication__isnull</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="o">|</span> <span class="n">Q</span><span class="p">(</span><span class="n">publication__in</span><span class="o">=</span><span class="n">publication_field</span><span class="o">.</span><span class="n">queryset</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="n">articles_field</span><span class="o">.</span><span class="n">label_from_instance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">article_label</span>
+
+<div class="viewcode-block" id="NewsletterForm.article_label">
+<a class="viewcode-back" href="../../news.html#news.forms.NewsletterForm.article_label">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">article_label</span><span class="p">(</span><span class="n">article</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        The label beside an article's checkbox: its title, author, and</span>
+<span class="sd">        publication.</span>
+
+<span class="sd">        :param article: The ``Article`` to label.</span>
+<span class="sd">        :returns: The label, such as ``What the Fog Remembers (by James,</span>
+<span class="sd">            Independent)``.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">publication</span><span class="p">:</span>
+            <span class="n">where</span> <span class="o">=</span> <span class="n">article</span><span class="o">.</span><span class="n">publication</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">where</span> <span class="o">=</span> <span class="s2">"Independent"</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">article</span><span class="o">.</span><span class="n">title</span><span class="si">}</span><span class="s2"> (by </span><span class="si">{</span><span class="n">article</span><span class="o">.</span><span class="n">author</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">)"</span></div>
+
+
+<div class="viewcode-block" id="NewsletterForm.clean">
+<a class="viewcode-back" href="../../news.html#news.forms.NewsletterForm.clean">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">clean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Checks that every chosen article fits the newsletter's</span>
+<span class="sd">        publication, and names the ones that do not.</span>
+
+<span class="sd">        :returns: The form's cleaned data. An article that does not fit</span>
+<span class="sd">            adds an error to the ``articles`` field instead.</span>
+<span class="sd">        """</span>
+        <span class="n">cleaned_data</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">clean</span><span class="p">()</span>
+        <span class="n">articles</span> <span class="o">=</span> <span class="n">cleaned_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"articles"</span><span class="p">)</span>
+
+        <span class="c1"># On the edit form there is no publication field, so the</span>
+        <span class="c1"># newsletter's own publication is used.</span>
+        <span class="n">publication</span> <span class="o">=</span> <span class="n">cleaned_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span>
+            <span class="s2">"publication"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="o">.</span><span class="n">publication</span>
+        <span class="p">)</span>
+
+        <span class="c1"># Missing when the articles already failed their own checks.</span>
+        <span class="k">if</span> <span class="n">articles</span><span class="p">:</span>
+            <span class="n">allowed_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+                <span class="n">articles_for_newsletter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">author</span><span class="p">,</span> <span class="n">publication</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk__in</span><span class="o">=</span><span class="p">[</span><span class="n">article</span><span class="o">.</span><span class="n">pk</span> <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="n">articles</span><span class="p">])</span>
+                <span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s2">"pk"</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">misfits</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">article</span><span class="o">.</span><span class="n">title</span>
+                <span class="k">for</span> <span class="n">article</span> <span class="ow">in</span> <span class="n">articles</span>
+                <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">pk</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">allowed_ids</span>
+            <span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">misfits</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">publication</span><span class="p">:</span>
+                    <span class="n">where</span> <span class="o">=</span> <span class="n">publication</span><span class="o">.</span><span class="n">name</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">where</span> <span class="o">=</span> <span class="s2">"an independent newsletter"</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">add_error</span><span class="p">(</span>
+                    <span class="s2">"articles"</span><span class="p">,</span>
+                    <span class="sa">f</span><span class="s2">"These articles do not belong in </span><span class="si">{</span><span class="n">where</span><span class="si">}</span><span class="s2">: "</span>
+                    <span class="o">+</span> <span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">misfits</span><span class="p">)</span>
+                    <span class="o">+</span> <span class="s2">"."</span><span class="p">,</span>
+                <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">cleaned_data</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="PublicationForm">
+<a class="viewcode-back" href="../../news.html#news.forms.PublicationForm">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">PublicationForm</span><span class="p">(</span><span class="n">forms</span><span class="o">.</span><span class="n">ModelForm</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The form for creating a publication or editing one, including</span>
+<span class="sd">    choosing its editors and journalists.</span>
+<span class="sd">    """</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">Publication</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">"description"</span><span class="p">,</span> <span class="s2">"editors"</span><span class="p">,</span> <span class="s2">"journalists"</span><span class="p">]</span>
+        <span class="n">widgets</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"description"</span><span class="p">:</span> <span class="n">forms</span><span class="o">.</span><span class="n">Textarea</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">{</span><span class="s2">"rows"</span><span class="p">:</span> <span class="mi">4</span><span class="p">}),</span>
+            <span class="s2">"editors"</span><span class="p">:</span> <span class="n">forms</span><span class="o">.</span><span class="n">CheckboxSelectMultiple</span><span class="p">,</span>
+            <span class="s2">"journalists"</span><span class="p">:</span> <span class="n">forms</span><span class="o">.</span><span class="n">CheckboxSelectMultiple</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Builds the form, offering every editor and journalist as staff,</span>
+<span class="sd">        by username.</span>
+
+<span class="sd">        :param args: Passed on to Django's ``ModelForm``, such as the</span>
+<span class="sd">            submitted data.</span>
+<span class="sd">        :param kwargs: Passed on to Django's ``ModelForm``, such as the</span>
+<span class="sd">            ``instance`` being edited.</span>
+<span class="sd">        """</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"editors"</span><span class="p">]</span><span class="o">.</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">role</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">EDITOR</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"username"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"journalists"</span><span class="p">]</span><span class="o">.</span><span class="n">queryset</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">role</span><span class="o">=</span><span class="n">User</span><span class="o">.</span><span class="n">JOURNALIST</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"username"</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"editors"</span><span class="p">]</span><span class="o">.</span><span class="n">help_text</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"Editors approve, edit, and delete this publication's "</span>
+            <span class="s2">"articles and newsletters."</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span><span class="p">[</span><span class="s2">"journalists"</span><span class="p">]</span><span class="o">.</span><span class="n">help_text</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"Journalists write, edit, and delete this publication's "</span>
+            <span class="s2">"articles and newsletters."</span>
+        <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

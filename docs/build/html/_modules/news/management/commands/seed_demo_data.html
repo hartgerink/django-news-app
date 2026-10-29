@@ -1,0 +1,394 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>news.management.commands.seed_demo_data &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">news.management.commands.seed_demo_data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for news.management.commands.seed_demo_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The ``seed_demo_data`` management command.</span>
+
+<span class="sd">Fills a blank database with the sample accounts, publications,</span>
+<span class="sd">subscriptions, articles, and newsletters in ``_demo_data.py``, and a</span>
+<span class="sd">superuser for the Django admin, for looking at the site and trying it</span>
+<span class="sd">out by hand. Unit tests do not use it; each test creates its own data.</span>
+
+<span class="sd">It only runs on a blank database: one with no users, publications,</span>
+<span class="sd">articles, or newsletters. That is what keeps it simple. It creates</span>
+<span class="sd">everything in one pass, with no checks for what already exists.</span>
+
+<span class="sd">.. rubric:: How to run it</span>
+
+<span class="sd">From the folder that contains ``manage.py``, after ``migrate_all`` and</span>
+<span class="sd">``setup_groups_and_permissions``::</span>
+
+<span class="sd">    python manage.py seed_demo_data</span>
+
+<span class="sd">If the database already has data, empty it first::</span>
+
+<span class="sd">    python manage.py delete_all_data</span>
+<span class="sd">    python manage.py seed_demo_data</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">timedelta</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">ImproperlyConfigured</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.management.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">CommandError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">transaction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">timezone</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">accounts.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">news.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Article</span><span class="p">,</span> <span class="n">Newsletter</span><span class="p">,</span> <span class="n">Publication</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">_demo_data</span> <span class="k">as</span> <span class="n">demo_data</span>
+
+
+<div class="viewcode-block" id="Command">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Fill a blank database with the demo data in ``_demo_data.py``.</span>
+
+<span class="sd">    Run it on a blank database, after ``setup_groups_and_permissions``::</span>
+
+<span class="sd">        python manage.py seed_demo_data</span>
+
+<span class="sd">    It stops without changing anything if the database already has any</span>
+<span class="sd">    users, publications, articles, or newsletters, or if the role groups</span>
+<span class="sd">    have not been set up. Everything is created in one transaction, so</span>
+<span class="sd">    if anything fails, the database is left blank.</span>
+<span class="sd">    """</span>
+
+    <span class="n">help</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"Fills a blank database with the demo accounts, publications, "</span>
+        <span class="s2">"subscriptions, articles, and newsletters, and an admin "</span>
+        <span class="s2">"superuser. Every demo account's password is "</span>
+        <span class="sa">f</span><span class="s1">'"</span><span class="si">{</span><span class="n">demo_data</span><span class="o">.</span><span class="n">PASSWORD</span><span class="si">}</span><span class="s1">".'</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="Command.handle">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command.handle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Check that the database is blank, then create the demo data.</span>
+
+<span class="sd">        :param args: Positional arguments from Django. Not used.</span>
+<span class="sd">        :param options: The command's options, from Django. Not used.</span>
+<span class="sd">        :raises CommandError: If the database is not blank, or the role</span>
+<span class="sd">                              groups have not been set up yet.</span>
+<span class="sd">        """</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_database_is_blank</span><span class="p">()</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">transaction</span><span class="o">.</span><span class="n">atomic</span><span class="p">():</span>
+                <span class="n">users</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_users</span><span class="p">()</span>
+                <span class="n">publications</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_publications</span><span class="p">(</span><span class="n">users</span><span class="p">)</span>
+                <span class="n">subscription_count</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_subscriptions</span><span class="p">(</span>
+                    <span class="n">users</span><span class="p">,</span> <span class="n">publications</span>
+                <span class="p">)</span>
+                <span class="n">articles</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_articles</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">publications</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_newsletters</span><span class="p">(</span><span class="n">users</span><span class="p">,</span> <span class="n">publications</span><span class="p">,</span> <span class="n">articles</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">ImproperlyConfigured</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="c1"># Raised by User.save() when a role's group is missing</span>
+            <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">error</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Created </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">users</span><span class="p">)</span><span class="si">}</span><span class="s2"> users, </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">publications</span><span class="p">)</span><span class="si">}</span><span class="s2"> "</span>
+                <span class="sa">f</span><span class="s2">"publications, </span><span class="si">{</span><span class="n">subscription_count</span><span class="si">}</span><span class="s2"> subscriptions, "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">articles</span><span class="p">)</span><span class="si">}</span><span class="s2"> articles, and "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">demo_data</span><span class="o">.</span><span class="n">NEWSLETTERS</span><span class="p">)</span><span class="si">}</span><span class="s2"> newsletters."</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">'Every demo account</span><span class="se">\'</span><span class="s1">s password is "</span><span class="si">{</span><span class="n">demo_data</span><span class="o">.</span><span class="n">PASSWORD</span><span class="si">}</span><span class="s1">".'</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Command.check_database_is_blank">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command.check_database_is_blank">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_database_is_blank</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Stop if the database already has any users, publications,</span>
+<span class="sd">        articles, or newsletters.</span>
+
+<span class="sd">        :raises CommandError: If any of them exist, naming how many.</span>
+<span class="sd">        """</span>
+        <span class="c1"># For example:</span>
+        <span class="c1">#     [("users", 8), ("articles", 10)]  # what is already there</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">())</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="p">[</span>
+                <span class="p">(</span><span class="s2">"users"</span><span class="p">,</span> <span class="n">User</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"publications"</span><span class="p">,</span> <span class="n">Publication</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"articles"</span><span class="p">,</span> <span class="n">Article</span><span class="p">),</span>
+                <span class="p">(</span><span class="s2">"newsletters"</span><span class="p">,</span> <span class="n">Newsletter</span><span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">]</span>
+        <span class="n">found</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">count</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">found</span> <span class="k">if</span> <span class="n">count</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+            <span class="n">summary</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">found</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"The database is not blank: it has </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">. Run "</span>
+                <span class="s2">"python manage.py delete_all_data first."</span>
+            <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Command.create_users">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command.create_users">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_users</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Create each account in ``USERS``, and the superuser in</span>
+<span class="sd">        ``SUPERUSER``. ``User.save()`` puts each one in its role's</span>
+<span class="sd">        group.</span>
+
+<span class="sd">        :returns: The new users, by username. For example,</span>
+<span class="sd">            ``users["Paul"]`` is the Publisher Paul.</span>
+<span class="sd">        """</span>
+        <span class="n">users</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">details</span> <span class="ow">in</span> <span class="n">demo_data</span><span class="o">.</span><span class="n">USERS</span><span class="p">:</span>
+            <span class="n">users</span><span class="p">[</span><span class="n">details</span><span class="p">[</span><span class="s2">"username"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create_user</span><span class="p">(</span>
+                <span class="n">username</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"username"</span><span class="p">],</span>
+                <span class="n">email</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"email"</span><span class="p">],</span>
+                <span class="n">password</span><span class="o">=</span><span class="n">demo_data</span><span class="o">.</span><span class="n">PASSWORD</span><span class="p">,</span>
+                <span class="n">role</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"role"</span><span class="p">],</span>
+            <span class="p">)</span>
+
+        <span class="c1"># The superuser has the default role, Reader.</span>
+        <span class="n">users</span><span class="p">[</span><span class="n">demo_data</span><span class="o">.</span><span class="n">SUPERUSER</span><span class="p">[</span><span class="s2">"username"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create_superuser</span><span class="p">(</span>
+            <span class="n">username</span><span class="o">=</span><span class="n">demo_data</span><span class="o">.</span><span class="n">SUPERUSER</span><span class="p">[</span><span class="s2">"username"</span><span class="p">],</span>
+            <span class="n">email</span><span class="o">=</span><span class="n">demo_data</span><span class="o">.</span><span class="n">SUPERUSER</span><span class="p">[</span><span class="s2">"email"</span><span class="p">],</span>
+            <span class="n">password</span><span class="o">=</span><span class="n">demo_data</span><span class="o">.</span><span class="n">PASSWORD</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">users</span></div>
+
+
+<div class="viewcode-block" id="Command.create_publications">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command.create_publications">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_publications</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">users</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Create each publication in ``PUBLICATIONS``, with its owner and</span>
+<span class="sd">        staff.</span>
+
+<span class="sd">        :param users: The new users, by username.</span>
+<span class="sd">        :returns: The new publications, by name. For example,</span>
+<span class="sd">            ``publications[demo_data.GAZETTE]``.</span>
+<span class="sd">        """</span>
+        <span class="n">publications</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">details</span> <span class="ow">in</span> <span class="n">demo_data</span><span class="o">.</span><span class="n">PUBLICATIONS</span><span class="p">:</span>
+            <span class="n">publication</span> <span class="o">=</span> <span class="n">Publication</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span>
+                <span class="n">owner</span><span class="o">=</span><span class="n">users</span><span class="p">[</span><span class="n">details</span><span class="p">[</span><span class="s2">"owner"</span><span class="p">]],</span>
+                <span class="n">description</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"description"</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="n">publication</span><span class="o">.</span><span class="n">editors</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">users</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">details</span><span class="p">[</span><span class="s2">"editors"</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="n">publication</span><span class="o">.</span><span class="n">journalists</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">users</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">details</span><span class="p">[</span><span class="s2">"journalists"</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="n">publications</span><span class="p">[</span><span class="n">details</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">publication</span>
+        <span class="k">return</span> <span class="n">publications</span></div>
+
+
+<div class="viewcode-block" id="Command.create_subscriptions">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command.create_subscriptions">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_subscriptions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">users</span><span class="p">,</span> <span class="n">publications</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Subscribe each Reader in ``SUBSCRIPTIONS`` to their publications</span>
+<span class="sd">        and journalists.</span>
+
+<span class="sd">        :param users: The new users, by username.</span>
+<span class="sd">        :param publications: The new publications, by name.</span>
+<span class="sd">        :returns: How many subscriptions were created.</span>
+<span class="sd">        """</span>
+        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">details</span> <span class="ow">in</span> <span class="n">demo_data</span><span class="o">.</span><span class="n">SUBSCRIPTIONS</span><span class="p">:</span>
+            <span class="n">reader</span> <span class="o">=</span> <span class="n">users</span><span class="p">[</span><span class="n">details</span><span class="p">[</span><span class="s2">"reader"</span><span class="p">]]</span>
+            <span class="n">reader</span><span class="o">.</span><span class="n">subscribed_publications</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">publications</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">details</span><span class="p">[</span><span class="s2">"publications"</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="n">reader</span><span class="o">.</span><span class="n">subscribed_journalists</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">users</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">details</span><span class="p">[</span><span class="s2">"journalists"</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">"publications"</span><span class="p">])</span>
+            <span class="n">count</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">"journalists"</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">count</span></div>
+
+
+<div class="viewcode-block" id="Command.create_articles">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command.create_articles">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_articles</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">users</span><span class="p">,</span> <span class="n">publications</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Create each article in ``ARTICLES``, dated ``days_ago`` days</span>
+<span class="sd">        back.</span>
+
+<span class="sd">        Articles created already approved do not email subscribers or</span>
+<span class="sd">        share the article with the third party, since the approval</span>
+<span class="sd">        signals only act when a pending article becomes approved.</span>
+
+<span class="sd">        :param users: The new users, by username.</span>
+<span class="sd">        :param publications: The new publications, by name.</span>
+<span class="sd">        :returns: The new articles, by title.</span>
+<span class="sd">        """</span>
+        <span class="n">articles</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">details</span> <span class="ow">in</span> <span class="n">demo_data</span><span class="o">.</span><span class="n">ARTICLES</span><span class="p">:</span>
+            <span class="c1"># None for an independent article</span>
+            <span class="n">publication</span> <span class="o">=</span> <span class="n">publications</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">"publication"</span><span class="p">])</span>
+
+            <span class="n">article</span> <span class="o">=</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+                <span class="n">content</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"content"</span><span class="p">],</span>
+                <span class="n">author</span><span class="o">=</span><span class="n">users</span><span class="p">[</span><span class="n">details</span><span class="p">[</span><span class="s2">"author"</span><span class="p">]],</span>
+                <span class="n">publication</span><span class="o">=</span><span class="n">publication</span><span class="p">,</span>
+                <span class="n">approved</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"approved"</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backdate</span><span class="p">(</span><span class="n">article</span><span class="p">,</span> <span class="n">details</span><span class="p">[</span><span class="s2">"days_ago"</span><span class="p">])</span>
+            <span class="n">articles</span><span class="p">[</span><span class="n">details</span><span class="p">[</span><span class="s2">"title"</span><span class="p">]]</span> <span class="o">=</span> <span class="n">article</span>
+        <span class="k">return</span> <span class="n">articles</span></div>
+
+
+<div class="viewcode-block" id="Command.create_newsletters">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command.create_newsletters">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">create_newsletters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">users</span><span class="p">,</span> <span class="n">publications</span><span class="p">,</span> <span class="n">articles</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Create each newsletter in ``NEWSLETTERS``, with its articles,</span>
+<span class="sd">        dated ``days_ago`` days back.</span>
+
+<span class="sd">        :param users: The new users, by username.</span>
+<span class="sd">        :param publications: The new publications, by name.</span>
+<span class="sd">        :param articles: The new articles, by title.</span>
+<span class="sd">        """</span>
+        <span class="k">for</span> <span class="n">details</span> <span class="ow">in</span> <span class="n">demo_data</span><span class="o">.</span><span class="n">NEWSLETTERS</span><span class="p">:</span>
+            <span class="n">newsletter</span> <span class="o">=</span> <span class="n">Newsletter</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+                <span class="n">title</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+                <span class="n">description</span><span class="o">=</span><span class="n">details</span><span class="p">[</span><span class="s2">"description"</span><span class="p">],</span>
+                <span class="n">author</span><span class="o">=</span><span class="n">users</span><span class="p">[</span><span class="n">details</span><span class="p">[</span><span class="s2">"author"</span><span class="p">]],</span>
+                <span class="c1"># None for an independent newsletter</span>
+                <span class="n">publication</span><span class="o">=</span><span class="n">publications</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">details</span><span class="p">[</span><span class="s2">"publication"</span><span class="p">]),</span>
+            <span class="p">)</span>
+            <span class="n">newsletter</span><span class="o">.</span><span class="n">articles</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">articles</span><span class="p">[</span><span class="n">title</span><span class="p">]</span> <span class="k">for</span> <span class="n">title</span> <span class="ow">in</span> <span class="n">details</span><span class="p">[</span><span class="s2">"articles"</span><span class="p">]]</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">backdate</span><span class="p">(</span><span class="n">newsletter</span><span class="p">,</span> <span class="n">details</span><span class="p">[</span><span class="s2">"days_ago"</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="Command.backdate">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.seed_demo_data.Command.backdate">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">backdate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">,</span> <span class="n">days_ago</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Move an article's or newsletter's creation date back by a number</span>
+<span class="sd">        of days.</span>
+
+<span class="sd">        ``created_at`` is filled in automatically when an item is first</span>
+<span class="sd">        saved, and that value cannot be set on creation, so it is</span>
+<span class="sd">        changed afterward with ``update()``, which writes straight to</span>
+<span class="sd">        the database. For example::</span>
+
+<span class="sd">            self.backdate(article, 3)  # created three days ago</span>
+
+<span class="sd">        :param item: The ``Article`` or ``Newsletter`` just created.</span>
+<span class="sd">        :param days_ago: How many days ago it should say it was created.</span>
+<span class="sd">        """</span>
+        <span class="n">created_at</span> <span class="o">=</span> <span class="n">timezone</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">days_ago</span><span class="p">)</span>
+        <span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">item</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">created_at</span><span class="o">=</span><span class="n">created_at</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

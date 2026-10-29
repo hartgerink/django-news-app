@@ -1,0 +1,246 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>news.management.commands.drop_all_tables &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">news.management.commands.drop_all_tables</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for news.management.commands.drop_all_tables</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The ``drop_all_tables`` management command.</span>
+
+<span class="sd">Deletes every table in the project's database: all the site's data,</span>
+<span class="sd">Django's own tables, and the records of which migrations have run.</span>
+<span class="sd">The database itself is kept, and so are the MariaDB account's rights</span>
+<span class="sd">to it, so nothing needs setting up again in MariaDB.</span>
+
+<span class="sd">Afterward, the database is empty, and the site cannot run until the</span>
+<span class="sd">tables are rebuilt. The usual steps from there::</span>
+
+<span class="sd">    python manage.py migrate_all</span>
+<span class="sd">    python manage.py setup_groups_and_permissions</span>
+<span class="sd">    python manage.py seed_demo_data</span>
+
+<span class="sd">.. rubric:: How to run it</span>
+
+<span class="sd">From the folder that contains ``manage.py``::</span>
+
+<span class="sd">    python manage.py drop_all_tables</span>
+
+<span class="sd">It asks you to type ``yes`` before deleting anything. To skip the</span>
+<span class="sd">question::</span>
+
+<span class="sd">    python manage.py drop_all_tables --no-input</span>
+
+<span class="sd">It only runs while ``DEBUG`` is ``True``, so it cannot empty a live</span>
+<span class="sd">site.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.management.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">CommandError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">connection</span>
+
+
+<div class="viewcode-block" id="Command">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.drop_all_tables.Command">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Delete every table in the project's database.</span>
+
+<span class="sd">    Run it with::</span>
+
+<span class="sd">        python manage.py drop_all_tables</span>
+
+<span class="sd">    The database and the MariaDB account's rights to it are kept.</span>
+<span class="sd">    """</span>
+
+    <span class="n">help</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"Deletes every table in the project's database, keeping the "</span>
+        <span class="s2">"database itself. Only runs while DEBUG is True."</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="Command.add_arguments">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.drop_all_tables.Command.add_arguments">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Add the ``--no-input`` option, which skips the ``yes`` question.</span>
+
+<span class="sd">        :param parser: The command's argument parser, from Django.</span>
+<span class="sd">        """</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s2">"--no-input"</span><span class="p">,</span>
+            <span class="s2">"--noinput"</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s2">"store_false"</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="s2">"interactive"</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s1">'Delete without asking you to type "yes" first.'</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Command.handle">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.drop_all_tables.Command.handle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Ask for confirmation, then delete every table in the database.</span>
+
+<span class="sd">        :param args: Positional arguments from Django. Not used.</span>
+<span class="sd">        :param options: The command's options, from Django. The</span>
+<span class="sd">            ``interactive`` option is ``False`` when ``--no-input`` is</span>
+<span class="sd">            given.</span>
+<span class="sd">        :raises CommandError: If ``DEBUG`` is ``False``, the database is</span>
+<span class="sd">                              not MariaDB or MySQL, or the answer is not</span>
+<span class="sd">                              ``yes``.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span>
+                <span class="s2">"drop_all_tables only runs while DEBUG is True, so it "</span>
+                <span class="s2">"cannot empty a live site."</span>
+            <span class="p">)</span>
+
+        <span class="c1"># Switching off foreign key checks, below, is MariaDB and MySQL</span>
+        <span class="c1"># syntax, so stop on any other database.</span>
+        <span class="k">if</span> <span class="n">connection</span><span class="o">.</span><span class="n">vendor</span> <span class="o">!=</span> <span class="s2">"mysql"</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span>
+                <span class="s2">"drop_all_tables only works with MariaDB or MySQL."</span>
+            <span class="p">)</span>
+
+        <span class="n">database_name</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">settings_dict</span><span class="p">[</span><span class="s2">"NAME"</span><span class="p">]</span>
+
+        <span class="c1"># Every table in the database, whether or not Django created it.</span>
+        <span class="c1"># For example:</span>
+        <span class="c1">#     ["accounts_user", "article", "django_migrations", ...]</span>
+        <span class="n">tables</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">introspection</span><span class="o">.</span><span class="n">table_names</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">tables</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">database_name</span><span class="si">}</span><span class="s2"> has no tables to delete."</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s2">"interactive"</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">WARNING</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"This will permanently delete all </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span><span class="si">}</span><span class="s2"> tables "</span>
+                    <span class="sa">f</span><span class="s2">"in </span><span class="si">{</span><span class="n">database_name</span><span class="si">}</span><span class="s2">, with all their data."</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">'Type "yes" to continue: '</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"yes"</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span><span class="s2">"Cancelled. Nothing was deleted."</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">connection</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span> <span class="k">as</span> <span class="n">cursor</span><span class="p">:</span>
+            <span class="c1"># Tables that point at each other cannot normally be</span>
+            <span class="c1"># deleted one at a time, so the checks are switched off</span>
+            <span class="c1"># while they go, and on again afterward, even if a delete</span>
+            <span class="c1"># fails.</span>
+            <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SET FOREIGN_KEY_CHECKS = 0"</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">tables</span><span class="p">:</span>
+                    <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">"DROP TABLE </span><span class="si">{</span><span class="n">connection</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">quote_name</span><span class="p">(</span><span class="n">table</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+                    <span class="p">)</span>
+            <span class="k">finally</span><span class="p">:</span>
+                <span class="n">cursor</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">"SET FOREIGN_KEY_CHECKS = 1"</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"Deleted all </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span><span class="si">}</span><span class="s2"> tables in </span><span class="si">{</span><span class="n">database_name</span><span class="si">}</span><span class="s2">."</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s2">"To rebuild them, run: python manage.py migrate_all"</span><span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

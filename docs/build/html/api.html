@@ -1,0 +1,309 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Third party" href="third_party.html" />
+    <link rel="prev" title="News" href="news.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="news.html">News</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#module-api.serializers">api.serializers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#api.serializers.ArticleSerializer"><code class="docutils literal notranslate"><span class="pre">ArticleSerializer</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#api.serializers.ArticleSerializer.validate_publication"><code class="docutils literal notranslate"><span class="pre">ArticleSerializer.validate_publication()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#module-api.views">api.views</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#api.views.fields_not_valid"><code class="docutils literal notranslate"><span class="pre">fields_not_valid()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#api.views.contains"><code class="docutils literal notranslate"><span class="pre">contains()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#api.views.articles"><code class="docutils literal notranslate"><span class="pre">articles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#api.views.subscribed"><code class="docutils literal notranslate"><span class="pre">subscribed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#api.views.pending"><code class="docutils literal notranslate"><span class="pre">pending()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#api.views.article_detail"><code class="docutils literal notranslate"><span class="pre">article_detail()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">API</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/api.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="api">
+<h1>API<a class="headerlink" href="#api" title="Link to this heading"></a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">api</span></code> app: the REST API for articles, with token
+authentication.</p>
+<section id="module-api.serializers">
+<span id="api-serializers"></span><h2>api.serializers<a class="headerlink" href="#module-api.serializers" title="Link to this heading"></a></h2>
+<p>The REST API’s serializer, which turns articles into JSON and checks
+the JSON that callers send.</p>
+<dl class="py class">
+<dt class="sig sig-object py" id="api.serializers.ArticleSerializer">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">api.serializers.</span></span><span class="sig-name descname"><span class="pre">ArticleSerializer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api/serializers.html#ArticleSerializer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#api.serializers.ArticleSerializer" title="Link to this definition"></a></dt>
+<dd><p>Turns an article into JSON, and checks the JSON sent to create or
+update one.</p>
+<p>A caller sends the title, the content, and, for a new article, its
+publication’s ID, or <code class="docutils literal notranslate"><span class="pre">null</span></code> for an independent article. The
+author, approval, and creation time are set by the application.</p>
+<p>To check the publication of a new article, the serializer needs the
+request in its context, since the caller is the author.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>author</strong> – The author’s username, which is easier to read than
+their ID.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="api.serializers.ArticleSerializer.validate_publication">
+<span class="sig-name descname"><span class="pre">validate_publication</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">publication</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api/serializers.html#ArticleSerializer.validate_publication"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#api.serializers.ArticleSerializer.validate_publication" title="Link to this definition"></a></dt>
+<dd><p>Refuses a publication the article may not have.</p>
+<p>A new article can be independent, or for a publication its
+author works for. An existing article keeps its publication, so
+sending a different one is refused.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>publication</strong> – The <code class="docutils literal notranslate"><span class="pre">Publication</span></code> sent, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for an
+independent article.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The publication, if the article may have it.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ValidationError</strong> – If an existing article’s publication
+would change, or a new article’s publication is not one its
+author works for.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-api.views">
+<span id="api-views"></span><h2>api.views<a class="headerlink" href="#module-api.views" title="Link to this heading"></a></h2>
+<p>The REST API’s article endpoints.</p>
+<p>Every endpoint in this file needs a valid token in the
+<code class="docutils literal notranslate"><span class="pre">Authorization</span></code> header, the default for Django REST Framework (DRF)
+views set in <code class="docutils literal notranslate"><span class="pre">REST_FRAMEWORK</span></code> in <code class="docutils literal notranslate"><span class="pre">settings.py</span></code>. A request with a
+missing or invalid token gets 401 Unauthorized before the view runs.</p>
+<p>The endpoint that gives users their tokens is not defined here. It is
+DRF’s ready-made token view, routed in <code class="docutils literal notranslate"><span class="pre">urls.py</span></code>, which returns a
+user’s token for their username and password.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="api.views.fields_not_valid">
+<span class="sig-prename descclassname"><span class="pre">api.views.</span></span><span class="sig-name descname"><span class="pre">fields_not_valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">errors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api/views.html#fields_not_valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#api.views.fields_not_valid" title="Link to this definition"></a></dt>
+<dd><p>The response to data with missing or invalid fields, listing each
+field and what is wrong with it.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>errors</strong> – The errors for each field, such as a serializer’s
+<code class="docutils literal notranslate"><span class="pre">errors</span></code>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A 400 Bad Request response, with the errors.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="api.views.contains">
+<span class="sig-prename descclassname"><span class="pre">api.views.</span></span><span class="sig-name descname"><span class="pre">contains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">articles</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">article</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api/views.html#contains"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#api.views.contains" title="Link to this definition"></a></dt>
+<dd><p>Whether a queryset of articles, such as the ones a user can change,
+includes this article.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>articles</strong> – A queryset of <code class="docutils literal notranslate"><span class="pre">Article</span></code> objects.</p></li>
+<li><p><strong>article</strong> – The <code class="docutils literal notranslate"><span class="pre">Article</span></code> object to look for.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">True</span></code> if the queryset includes the article, otherwise
+<code class="docutils literal notranslate"><span class="pre">False</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="api.views.articles">
+<span class="sig-prename descclassname"><span class="pre">api.views.</span></span><span class="sig-name descname"><span class="pre">articles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api/views.html#articles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#api.views.articles" title="Link to this definition"></a></dt>
+<dd><p>GET lists every approved article, newest first.</p>
+<p>POST creates an article written by the caller, which starts as
+pending. Only journalists can create articles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> – The API request. For POST, the new article as JSON.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>For GET, the approved articles. For POST, 201 Created,
+with the new article; 403 Forbidden if the caller is not a
+journalist; or 400 Bad Request, with each missing or invalid
+field.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="api.views.subscribed">
+<span class="sig-prename descclassname"><span class="pre">api.views.</span></span><span class="sig-name descname"><span class="pre">subscribed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api/views.html#subscribed"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#api.views.subscribed" title="Link to this definition"></a></dt>
+<dd><p>GET lists the approved articles from the caller’s subscriptions,
+the same articles as on a reader’s dashboard. Only readers have
+subscriptions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> – The API request.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The articles from the caller’s subscriptions, or 403
+Forbidden if the caller is not a reader.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="api.views.pending">
+<span class="sig-prename descclassname"><span class="pre">api.views.</span></span><span class="sig-name descname"><span class="pre">pending</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api/views.html#pending"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#api.views.pending" title="Link to this definition"></a></dt>
+<dd><p>GET lists the pending articles the caller can approve, oldest
+first, so the ones that have waited longest come first: a
+publication’s articles for its editors, and a journalist’s own
+independent articles for them. Only editors and journalists can
+approve articles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>request</strong> – The API request.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The pending articles the caller can approve, or 403
+Forbidden if the caller cannot approve articles.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="api.views.article_detail">
+<span class="sig-prename descclassname"><span class="pre">api.views.</span></span><span class="sig-name descname"><span class="pre">article_detail</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/api/views.html#article_detail"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#api.views.article_detail" title="Link to this definition"></a></dt>
+<dd><p>GET returns one article.</p>
+<p>PUT updates an article, sending every field, and PATCH updates
+only the fields sent. Either can approve a pending article by
+sending <code class="docutils literal notranslate"><span class="pre">&quot;approved&quot;:</span> <span class="pre">true</span></code>.</p>
+<p>DELETE deletes an article.</p>
+<p>Each method follows the same rules as the website.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>request</strong> – The API request. For PUT and PATCH, the article’s
+fields as JSON.</p></li>
+<li><p><strong>article_id</strong> – The article’s ID, from the URL.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>For GET, PUT, and PATCH, the article. For DELETE, 204 No
+Content. A change the caller may not make gets 403 Forbidden,
+and data that is not valid gets 400 Bad Request, each with a
+message saying why.</p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>Http404</strong> – If the article does not exist, or the caller may
+not read it.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="news.html" class="btn btn-neutral float-left" title="News" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="third_party.html" class="btn btn-neutral float-right" title="Third party" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

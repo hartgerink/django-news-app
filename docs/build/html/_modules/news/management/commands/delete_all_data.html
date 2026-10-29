@@ -1,0 +1,246 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>news.management.commands.delete_all_data &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">news.management.commands.delete_all_data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for news.management.commands.delete_all_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The ``delete_all_data`` management command.</span>
+
+<span class="sd">Deletes every user, publication, article, and newsletter, every</span>
+<span class="sd">article the simulated third party received, and every login session,</span>
+<span class="sd">so the site can start again from empty. The groups and their</span>
+<span class="sd">permissions are kept, since they are setup rather than data.</span>
+
+<span class="sd">.. rubric:: How to run it</span>
+
+<span class="sd">From the folder that contains ``manage.py``::</span>
+
+<span class="sd">    python manage.py delete_all_data</span>
+
+<span class="sd">It asks you to type ``yes`` before deleting anything. To skip the</span>
+<span class="sd">question::</span>
+
+<span class="sd">    python manage.py delete_all_data --no-input</span>
+
+<span class="sd">To fill the database again afterward::</span>
+
+<span class="sd">    python manage.py seed_demo_data</span>
+
+<span class="sd">It only runs while ``DEBUG`` is ``True``, so it cannot empty a live</span>
+<span class="sd">site.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.conf</span><span class="w"> </span><span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.sessions.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Session</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.management.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">CommandError</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db</span><span class="w"> </span><span class="kn">import</span> <span class="n">transaction</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">accounts.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">news.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Article</span><span class="p">,</span> <span class="n">Newsletter</span><span class="p">,</span> <span class="n">Publication</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">third_party.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThirdPartyArticle</span>
+
+
+<div class="viewcode-block" id="Command">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.delete_all_data.Command">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Delete every user, publication, article, newsletter, third-party</span>
+<span class="sd">    article, and login session.</span>
+
+<span class="sd">    Run it with::</span>
+
+<span class="sd">        python manage.py delete_all_data</span>
+
+<span class="sd">    Superusers are deleted too; ``seed_demo_data`` makes the admin</span>
+<span class="sd">    superuser again. The groups and their permissions are kept, so</span>
+<span class="sd">    ``seed_demo_data`` can be run straight afterward.</span>
+<span class="sd">    """</span>
+
+    <span class="n">help</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"Deletes every user, publication, article, newsletter, "</span>
+        <span class="s2">"third-party article, and login session. Keeps the groups and "</span>
+        <span class="s2">"their permissions. Only runs while DEBUG is True."</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="Command.add_arguments">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.delete_all_data.Command.add_arguments">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">add_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Add the ``--no-input`` option, which skips the ``yes`` question.</span>
+
+<span class="sd">        :param parser: The command's argument parser, from Django.</span>
+<span class="sd">        """</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s2">"--no-input"</span><span class="p">,</span>
+            <span class="s2">"--noinput"</span><span class="p">,</span>
+            <span class="n">action</span><span class="o">=</span><span class="s2">"store_false"</span><span class="p">,</span>
+            <span class="n">dest</span><span class="o">=</span><span class="s2">"interactive"</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s1">'Delete without asking you to type "yes" first.'</span><span class="p">,</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="Command.handle">
+<a class="viewcode-back" href="../../../../news.html#news.management.commands.delete_all_data.Command.handle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Ask for confirmation, then delete everything in one transaction.</span>
+
+<span class="sd">        :param args: Positional arguments from Django. Not used.</span>
+<span class="sd">        :param options: The command's options, from Django. The</span>
+<span class="sd">            ``interactive`` option is ``False`` when ``--no-input`` is</span>
+<span class="sd">            given.</span>
+<span class="sd">        :raises CommandError: If ``DEBUG`` is ``False``, or the answer</span>
+<span class="sd">                              is not ``yes``.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span>
+                <span class="s2">"delete_all_data only runs while DEBUG is True, so it cannot "</span>
+                <span class="s2">"empty a live site."</span>
+            <span class="p">)</span>
+
+        <span class="c1"># What will be deleted, counted first so the question and the</span>
+        <span class="c1"># final report can show the numbers. For example:</span>
+        <span class="c1">#     ("users", 8)</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">(</span><span class="s2">"users"</span><span class="p">,</span> <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()),</span>
+            <span class="p">(</span><span class="s2">"publications"</span><span class="p">,</span> <span class="n">Publication</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()),</span>
+            <span class="p">(</span><span class="s2">"articles"</span><span class="p">,</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()),</span>
+            <span class="p">(</span><span class="s2">"newsletters"</span><span class="p">,</span> <span class="n">Newsletter</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()),</span>
+            <span class="p">(</span><span class="s2">"third-party articles"</span><span class="p">,</span> <span class="n">ThirdPartyArticle</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()),</span>
+            <span class="p">(</span><span class="s2">"login sessions"</span><span class="p">,</span> <span class="n">Session</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">count</span><span class="p">()),</span>
+        <span class="p">]</span>
+        <span class="n">summary</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">count</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">options</span><span class="p">[</span><span class="s2">"interactive"</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">WARNING</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"This will permanently delete </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">. The groups "</span>
+                    <span class="s2">"and their permissions are kept."</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">answer</span> <span class="o">=</span> <span class="nb">input</span><span class="p">(</span><span class="s1">'Type "yes" to continue: '</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="s2">"yes"</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span><span class="s2">"Cancelled. Nothing was deleted."</span><span class="p">)</span>
+
+        <span class="c1"># Newsletters, third-party articles, articles, and publications</span>
+        <span class="c1"># first, then the users, so nothing is left pointing at a</span>
+        <span class="c1"># deleted user. Deleting the publications and users also deletes</span>
+        <span class="c1"># their staff and subscription links, and deleting the users</span>
+        <span class="c1"># deletes their group memberships and any API tokens.</span>
+        <span class="c1"># Everything happens in one transaction, so if anything fails,</span>
+        <span class="c1"># nothing is deleted.</span>
+        <span class="k">with</span> <span class="n">transaction</span><span class="o">.</span><span class="n">atomic</span><span class="p">():</span>
+            <span class="n">Newsletter</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="n">ThirdPartyArticle</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="n">Publication</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="n">User</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="n">Session</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">all</span><span class="p">()</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Deleted </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">."</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+            <span class="s2">"To fill the database again, run: "</span>
+            <span class="s2">"python manage.py seed_demo_data"</span>
+        <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,400 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>news.views.publications &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">news.views.publications</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for news.views.publications</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The publication pages: the list of publications, and the pages for</span>
+<span class="sd">reading about, creating, editing, and deleting a publication.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib</span><span class="w"> </span><span class="kn">import</span> <span class="n">messages</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">user_passes_test</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Count</span><span class="p">,</span> <span class="n">Q</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.shortcuts</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_object_or_404</span><span class="p">,</span> <span class="n">redirect</span><span class="p">,</span> <span class="n">render</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.views.decorators.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">require_GET</span><span class="p">,</span> <span class="n">require_http_methods</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">accounts.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..access</span><span class="w"> </span><span class="kn">import</span> <span class="n">publications_user_can_manage</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..forms</span><span class="w"> </span><span class="kn">import</span> <span class="n">PublicationForm</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Publication</span>
+
+
+<div class="viewcode-block" id="publication_list">
+<a class="viewcode-back" href="../../../news.html#news.views.publications.publication_list">[docs]</a>
+<span class="nd">@require_GET</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">publication_list</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The list of every publication, by name, with its owner and how many</span>
+<span class="sd">    approved articles it has.</span>
+
+<span class="sd">    Publishers, editors and journalists see their own publications</span>
+<span class="sd">    first, under My Publications, and the rest under Other</span>
+<span class="sd">    Publications. Readers see one list.</span>
+
+<span class="sd">    :param request: The HTTP request.</span>
+<span class="sd">    :returns: The publication list page.</span>
+<span class="sd">    """</span>
+    <span class="n">publications</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">Publication</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">"owner"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+            <span class="n">approved_count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span>
+                <span class="s2">"articles"</span><span class="p">,</span>
+                <span class="nb">filter</span><span class="o">=</span><span class="n">Q</span><span class="p">(</span><span class="n">articles__approved</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Only readers subscribe, so only they see which publications they</span>
+    <span class="c1"># are subscribed to.</span>
+    <span class="n">subscribed_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">User</span><span class="o">.</span><span class="n">READER</span><span class="p">:</span>
+        <span class="n">subscribed_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span>
+            <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">subscribed_publications</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s2">"pk"</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="c1"># A user's own publications: the ones a publisher owns, or the ones</span>
+    <span class="c1"># an editor or journalist is on the staff of. Readers have none.</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span>
+    <span class="n">mine</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">User</span><span class="o">.</span><span class="n">PUBLISHER</span><span class="p">:</span>
+        <span class="n">mine</span> <span class="o">=</span> <span class="n">Q</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">none_yet</span> <span class="o">=</span> <span class="s2">"You don't own any publications yet."</span>
+    <span class="k">elif</span> <span class="n">user</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">User</span><span class="o">.</span><span class="n">JOURNALIST</span><span class="p">:</span>
+        <span class="n">mine</span> <span class="o">=</span> <span class="n">Q</span><span class="p">(</span><span class="n">journalists</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">none_yet</span> <span class="o">=</span> <span class="s2">"You are not on the staff of any publication yet."</span>
+    <span class="k">elif</span> <span class="n">user</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">User</span><span class="o">.</span><span class="n">EDITOR</span><span class="p">:</span>
+        <span class="n">mine</span> <span class="o">=</span> <span class="n">Q</span><span class="p">(</span><span class="n">editors</span><span class="o">=</span><span class="n">user</span><span class="p">)</span>
+        <span class="n">none_yet</span> <span class="o">=</span> <span class="s2">"You are not on the staff of any publication yet."</span>
+
+    <span class="c1"># Each section has a heading, its publications, and what to say when</span>
+    <span class="c1"># it has none.</span>
+    <span class="k">if</span> <span class="n">mine</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">sections</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">"heading"</span><span class="p">:</span> <span class="s2">"My Publications"</span><span class="p">,</span>
+                <span class="s2">"publications"</span><span class="p">:</span> <span class="n">publications</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">mine</span><span class="p">),</span>
+                <span class="s2">"empty"</span><span class="p">:</span> <span class="n">none_yet</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="p">{</span>
+                <span class="s2">"heading"</span><span class="p">:</span> <span class="s2">"Other Publications"</span><span class="p">,</span>
+                <span class="s2">"publications"</span><span class="p">:</span> <span class="n">publications</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="n">mine</span><span class="p">),</span>
+                <span class="s2">"empty"</span><span class="p">:</span> <span class="s2">"There are no other publications yet."</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">sections</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s2">"heading"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="s2">"publications"</span><span class="p">:</span> <span class="n">publications</span><span class="p">,</span>
+                <span class="s2">"empty"</span><span class="p">:</span> <span class="s2">"There are no publications yet."</span><span class="p">,</span>
+            <span class="p">},</span>
+        <span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="s2">"news/publication_list.html"</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">"sections"</span><span class="p">:</span> <span class="n">sections</span><span class="p">,</span> <span class="s2">"subscribed_ids"</span><span class="p">:</span> <span class="n">subscribed_ids</span><span class="p">},</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="publication_detail">
+<a class="viewcode-back" href="../../../news.html#news.views.publications.publication_detail">[docs]</a>
+<span class="nd">@require_GET</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">publication_detail</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">publication_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The page for one publication, with its description, owner, staff,</span>
+<span class="sd">    approved articles and newsletters.</span>
+
+<span class="sd">    An ID that is not a publication's gets "404 Not Found".</span>
+
+<span class="sd">    :param request: The HTTP request.</span>
+<span class="sd">    :param publication_id: The publication's ID, from the URL.</span>
+<span class="sd">    :returns: The publication's page.</span>
+<span class="sd">    :raises Http404: If the publication does not exist.</span>
+<span class="sd">    """</span>
+    <span class="n">publication</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span>
+        <span class="n">Publication</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">"owner"</span><span class="p">),</span>
+        <span class="n">pk</span><span class="o">=</span><span class="n">publication_id</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">user</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span>
+
+    <span class="n">articles</span> <span class="o">=</span> <span class="n">publication</span><span class="o">.</span><span class="n">articles</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">"author"</span><span class="p">)</span>
+
+    <span class="c1"># Only the publication's staff can see its pending articles. Its</span>
+    <span class="c1"># owner sees only approved content.</span>
+    <span class="n">sees_pending</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">publication</span><span class="o">.</span><span class="n">editors</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="ow">or</span> <span class="n">publication</span><span class="o">.</span><span class="n">journalists</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">user</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+    <span class="p">)</span>
+
+    <span class="c1"># can_manage decides whether to show the Edit and Delete buttons.</span>
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"publication"</span><span class="p">:</span> <span class="n">publication</span><span class="p">,</span>
+        <span class="s2">"editors"</span><span class="p">:</span> <span class="n">publication</span><span class="o">.</span><span class="n">editors</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"username"</span><span class="p">),</span>
+        <span class="s2">"journalists"</span><span class="p">:</span> <span class="n">publication</span><span class="o">.</span><span class="n">journalists</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"username"</span><span class="p">),</span>
+        <span class="s2">"approved_articles"</span><span class="p">:</span> <span class="n">articles</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">approved</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">"sees_pending"</span><span class="p">:</span> <span class="n">sees_pending</span><span class="p">,</span>
+        <span class="s2">"newsletters"</span><span class="p">:</span> <span class="n">publication</span><span class="o">.</span><span class="n">newsletters</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">"author"</span><span class="p">),</span>
+        <span class="s2">"can_manage"</span><span class="p">:</span> <span class="n">publications_user_can_manage</span><span class="p">(</span>
+            <span class="n">user</span><span class="p">,</span> <span class="s2">"news.change_publication"</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">publication</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">exists</span><span class="p">(),</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="n">sees_pending</span><span class="p">:</span>
+        <span class="n">context</span><span class="p">[</span><span class="s2">"pending_articles"</span><span class="p">]</span> <span class="o">=</span> <span class="n">articles</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">approved</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="c1"># Only readers subscribe, so only they see a Subscribe or</span>
+    <span class="c1"># Unsubscribe button.</span>
+    <span class="k">if</span> <span class="n">user</span><span class="o">.</span><span class="n">role</span> <span class="o">==</span> <span class="n">User</span><span class="o">.</span><span class="n">READER</span><span class="p">:</span>
+        <span class="n">context</span><span class="p">[</span><span class="s2">"subscribed_to_publication"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">user</span><span class="o">.</span><span class="n">subscribed_publications</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">publication</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"news/publication_detail.html"</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="create_publication">
+<a class="viewcode-back" href="../../../news.html#news.views.publications.create_publication">[docs]</a>
+<span class="nd">@user_passes_test</span><span class="p">(</span>
+    <span class="k">lambda</span> <span class="n">user</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">has_perm</span><span class="p">(</span><span class="s2">"news.add_publication"</span><span class="p">),</span>
+    <span class="n">login_url</span><span class="o">=</span><span class="s2">"news:dashboard"</span><span class="p">,</span>
+    <span class="n">redirect_field_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="nd">@require_http_methods</span><span class="p">([</span><span class="s2">"GET"</span><span class="p">,</span> <span class="s2">"POST"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">create_publication</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The page where a publisher creates a new publication and chooses</span>
+<span class="sd">    its editors and journalists.</span>
+
+<span class="sd">    Only publishers can create publications. Other users are sent to</span>
+<span class="sd">    their dashboard.</span>
+
+<span class="sd">    :param request: The HTTP request.</span>
+<span class="sd">    :returns: The publication form, or a redirect to the dashboard once</span>
+<span class="sd">        the publication is created.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">PublicationForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="c1"># The owner is always the publisher who created it.</span>
+            <span class="n">publication</span> <span class="o">=</span> <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">commit</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">publication</span><span class="o">.</span><span class="n">owner</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span>
+            <span class="n">publication</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+            <span class="c1"># Saves the chosen staff, which needs the publication to be</span>
+            <span class="c1"># saved first.</span>
+            <span class="n">form</span><span class="o">.</span><span class="n">save_m2m</span><span class="p">()</span>
+
+            <span class="n">messages</span><span class="o">.</span><span class="n">success</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">'Your publication "</span><span class="si">{</span><span class="n">publication</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">" was created.'</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s2">"news:dashboard"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">PublicationForm</span><span class="p">()</span>
+
+    <span class="c1"># Shows an empty form, or the submitted form with its errors.</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"news/publication_form.html"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"form"</span><span class="p">:</span> <span class="n">form</span><span class="p">})</span></div>
+
+
+
+<div class="viewcode-block" id="edit_publication">
+<a class="viewcode-back" href="../../../news.html#news.views.publications.edit_publication">[docs]</a>
+<span class="nd">@require_http_methods</span><span class="p">([</span><span class="s2">"GET"</span><span class="p">,</span> <span class="s2">"POST"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">edit_publication</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">publication_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The page where a publisher edits a publication they own, including</span>
+<span class="sd">    its staff.</span>
+
+<span class="sd">    An editor or journalist taken off the staff loses their rights over</span>
+<span class="sd">    its content. Anyone but the owner gets "404 Not Found".</span>
+
+<span class="sd">    :param request: The HTTP request.</span>
+<span class="sd">    :param publication_id: The publication's ID, from the URL.</span>
+<span class="sd">    :returns: The publication form, or a redirect to the dashboard once</span>
+<span class="sd">        the changes are saved.</span>
+<span class="sd">    :raises Http404: If the publication does not exist, or the user is</span>
+<span class="sd">        not its owner.</span>
+<span class="sd">    """</span>
+    <span class="n">publication</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span>
+        <span class="n">publications_user_can_manage</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="s2">"news.change_publication"</span><span class="p">),</span>
+        <span class="n">pk</span><span class="o">=</span><span class="n">publication_id</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">PublicationForm</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">POST</span><span class="p">,</span> <span class="n">instance</span><span class="o">=</span><span class="n">publication</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">form</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="n">form</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+            <span class="n">messages</span><span class="o">.</span><span class="n">success</span><span class="p">(</span>
+                <span class="n">request</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s1">'Your changes to "</span><span class="si">{</span><span class="n">publication</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1">" were saved.'</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s2">"news:dashboard"</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">form</span> <span class="o">=</span> <span class="n">PublicationForm</span><span class="p">(</span><span class="n">instance</span><span class="o">=</span><span class="n">publication</span><span class="p">)</span>
+
+    <span class="c1"># Shows the publication's current values, or the submitted form with</span>
+    <span class="c1"># its errors.</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="s2">"news/publication_form.html"</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">"form"</span><span class="p">:</span> <span class="n">form</span><span class="p">,</span> <span class="s2">"publication"</span><span class="p">:</span> <span class="n">publication</span><span class="p">},</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="delete_publication">
+<a class="viewcode-back" href="../../../news.html#news.views.publications.delete_publication">[docs]</a>
+<span class="nd">@require_http_methods</span><span class="p">([</span><span class="s2">"GET"</span><span class="p">,</span> <span class="s2">"POST"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">delete_publication</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">publication_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The page where a publisher deletes a publication they own, after a</span>
+<span class="sd">    confirmation.</span>
+
+<span class="sd">    Its articles become independent and keep their approval. Its</span>
+<span class="sd">    newsletters and the subscriptions to it are deleted. Anyone but the</span>
+<span class="sd">    owner gets "404 Not Found".</span>
+
+<span class="sd">    :param request: The HTTP request.</span>
+<span class="sd">    :param publication_id: The publication's ID, from the URL.</span>
+<span class="sd">    :returns: The confirmation page, or a redirect to the dashboard once</span>
+<span class="sd">        the publication is deleted.</span>
+<span class="sd">    :raises Http404: If the publication does not exist, or the user is</span>
+<span class="sd">        not its owner.</span>
+<span class="sd">    """</span>
+    <span class="n">publication</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span>
+        <span class="n">publications_user_can_manage</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">,</span> <span class="s2">"news.delete_publication"</span><span class="p">),</span>
+        <span class="n">pk</span><span class="o">=</span><span class="n">publication_id</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"POST"</span><span class="p">:</span>
+        <span class="c1"># Kept for the message, since the publication is gone once</span>
+        <span class="c1"># deleted.</span>
+        <span class="n">name</span> <span class="o">=</span> <span class="n">publication</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">publication</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+
+        <span class="n">messages</span><span class="o">.</span><span class="n">success</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="sa">f</span><span class="s1">'Your publication "</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">" was deleted.'</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s2">"news:dashboard"</span><span class="p">)</span>
+
+    <span class="c1"># Asks the publisher to confirm, showing how many articles,</span>
+    <span class="c1"># newsletters and subscribers are affected.</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="s2">"news/publication_confirm_delete.html"</span><span class="p">,</span>
+        <span class="p">{</span>
+            <span class="s2">"publication"</span><span class="p">:</span> <span class="n">publication</span><span class="p">,</span>
+            <span class="s2">"article_count"</span><span class="p">:</span> <span class="n">publication</span><span class="o">.</span><span class="n">articles</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span>
+            <span class="s2">"newsletter_count"</span><span class="p">:</span> <span class="n">publication</span><span class="o">.</span><span class="n">newsletters</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span>
+            <span class="s2">"subscriber_count"</span><span class="p">:</span> <span class="n">publication</span><span class="o">.</span><span class="n">subscribers</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span>
+        <span class="p">},</span>
+    <span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
