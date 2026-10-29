@@ -1,11 +1,15 @@
-# Every endpoint in this file needs a valid token in the Authorization
-# header, the default for Django REST Framework (DRF) views set in
-# REST_FRAMEWORK in settings.py. A request with a missing or invalid
-# token gets 401 Unauthorized before the view runs.
-#
-# The endpoint that gives users their tokens is not defined here. It is
-# DRF's ready-made token view, routed in urls.py, which returns a user's
-# token for their username and password.
+"""
+The REST API's article endpoints.
+
+Every endpoint in this file needs a valid token in the
+``Authorization`` header, the default for Django REST Framework (DRF)
+views set in ``REST_FRAMEWORK`` in ``settings.py``. A request with a
+missing or invalid token gets 401 Unauthorized before the view runs.
+
+The endpoint that gives users their tokens is not defined here. It is
+DRF's ready-made token view, routed in ``urls.py``, which returns a
+user's token for their username and password.
+"""
 
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
@@ -28,6 +32,10 @@ def fields_not_valid(errors):
     """
     The response to data with missing or invalid fields, listing each
     field and what is wrong with it.
+
+    :param errors: The errors for each field, such as a serializer's
+        ``errors``.
+    :returns: A 400 Bad Request response, with the errors.
     """
     return Response(
         {"detail": "Some fields are missing or not valid.", "errors": errors},
@@ -39,6 +47,11 @@ def contains(articles, article):
     """
     Whether a queryset of articles, such as the ones a user can change,
     includes this article.
+
+    :param articles: A queryset of ``Article`` objects.
+    :param article: The ``Article`` object to look for.
+    :returns: ``True`` if the queryset includes the article, otherwise
+        ``False``.
     """
     return articles.filter(pk=article.pk).exists()
 
@@ -50,6 +63,12 @@ def articles(request):
 
     POST creates an article written by the caller, which starts as
     pending. Only journalists can create articles.
+
+    :param request: The API request. For POST, the new article as JSON.
+    :returns: For GET, the approved articles. For POST, 201 Created,
+        with the new article; 403 Forbidden if the caller is not a
+        journalist; or 400 Bad Request, with each missing or invalid
+        field.
     """
     if request.method == "GET":
         approved = Article.objects.filter(approved=True).select_related(
@@ -81,6 +100,10 @@ def subscribed(request):
     GET lists the approved articles from the caller's subscriptions,
     the same articles as on a reader's dashboard. Only readers have
     subscriptions.
+
+    :param request: The API request.
+    :returns: The articles from the caller's subscriptions, or 403
+        Forbidden if the caller is not a reader.
     """
     if request.user.role != User.READER:
         return Response(
@@ -102,6 +125,10 @@ def pending(request):
     publication's articles for its editors, and a journalist's own
     independent articles for them. Only editors and journalists can
     approve articles.
+
+    :param request: The API request.
+    :returns: The pending articles the caller can approve, or 403
+        Forbidden if the caller cannot approve articles.
     """
     if not request.user.has_perm("news.approve_article"):
         return Response(
@@ -124,11 +151,21 @@ def article_detail(request, article_id):
 
     PUT updates an article, sending every field, and PATCH updates
     only the fields sent. Either can approve a pending article by
-    sending "approved": true.
+    sending ``"approved": true``.
 
     DELETE deletes an article.
 
     Each method follows the same rules as the website.
+
+    :param request: The API request. For PUT and PATCH, the article's
+        fields as JSON.
+    :param article_id: The article's ID, from the URL.
+    :returns: For GET, PUT, and PATCH, the article. For DELETE, 204 No
+        Content. A change the caller may not make gets 403 Forbidden,
+        and data that is not valid gets 400 Bad Request, each with a
+        message saying why.
+    :raises Http404: If the article does not exist, or the caller may
+        not read it.
     """
     # A caller who may not read the article gets 404, so the response
     # does not reveal that a pending article exists.

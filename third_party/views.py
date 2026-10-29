@@ -1,3 +1,8 @@
+"""
+The simulated third party's API: the endpoint that receives approved
+articles.
+"""
+
 from django.conf import settings
 from rest_framework import status
 from rest_framework.decorators import (
@@ -11,10 +16,6 @@ from rest_framework.response import Response
 from .serializers import ThirdPartyArticleSerializer
 
 
-# The simulated third party expects a valid API key, which is stored in
-# settings.py as THIRD_PARTY_API_KEY. The view checks the key itself, so
-# the usual login and permission checks of Django REST Framework (DRF)
-# are turned off.
 @api_view(["POST"])
 @authentication_classes([])
 @permission_classes([AllowAny])
@@ -23,8 +24,17 @@ def receive_article(request):
     The simulated third party's endpoint, which receives approved
     articles as JSON and saves them.
 
-    A request without the right API key, or with missing or invalid
-    fields, is refused with a message saying why.
+    The third party expects a valid API key in the ``X-API-Key``
+    header, checked against the ``THIRD_PARTY_API_KEY`` setting. The
+    view checks the key itself, so the usual login and permission
+    checks of Django REST Framework (DRF) are turned off. A request
+    without the right API key, or with missing or invalid fields, is
+    refused with a message saying why.
+
+    :param request: The API request, with the article as JSON.
+    :returns: 201 Created, with the saved article; 401 Unauthorized if
+        the API key is missing or not valid; or 400 Bad Request, with
+        each missing or invalid field.
     """
     sent_key = request.headers.get("X-API-Key")
     if sent_key is None:

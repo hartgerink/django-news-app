@@ -1,3 +1,8 @@
+"""
+The journalist pages: the list of journalists, and the page for each
+one.
+"""
+
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_GET
@@ -10,6 +15,9 @@ def journalist_list(request):
     """
     The list of every journalist, by username, with the publications
     they are on the staff of and how many approved articles they have.
+
+    :param request: The HTTP request.
+    :returns: The journalist list page.
     """
     journalists = (
         User.objects.filter(role=User.JOURNALIST)
@@ -48,6 +56,11 @@ def journalist_detail(request, journalist_id):
     staff of and their approved independent articles.
 
     An ID that is not a journalist's gets "404 Not Found".
+
+    :param request: The HTTP request.
+    :param journalist_id: The journalist's user ID, from the URL.
+    :returns: The journalist's page.
+    :raises Http404: If the ID is not a journalist's.
     """
     journalist = get_object_or_404(
         User,

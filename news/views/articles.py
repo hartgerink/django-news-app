@@ -1,3 +1,8 @@
+"""
+The article pages: the list of approved articles, and the pages for
+reading, writing, approving, editing, and deleting an article.
+"""
+
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
@@ -23,6 +28,9 @@ def article_list(request):
     Every user sees the same list. It is not limited to the user's
     subscriptions. Pending articles are not listed here. They appear on
     the dashboards of the people who work on them.
+
+    :param request: The HTTP request.
+    :returns: The article list page.
     """
     articles = Article.objects.filter(approved=True).select_related(
         "author", "publication"
@@ -35,8 +43,6 @@ def article_list(request):
     )
 
 
-# Only journalists can write articles. Other users are sent to their
-# dashboard.
 @user_passes_test(
     lambda user: user.has_perm("news.add_article"),
     login_url="news:dashboard",
@@ -48,7 +54,12 @@ def create_article(request):
     The page where a journalist writes a new article, either
     independently or for a publication they are on the staff of.
 
-    A new article is pending until it is approved.
+    Only journalists can write articles. Other users are sent to their
+    dashboard. A new article is pending until it is approved.
+
+    :param request: The HTTP request.
+    :returns: The article form, or a redirect to the dashboard once the
+        article is saved.
     """
     if request.method == "POST":
         form = ArticleForm(request.POST, author=request.user)
@@ -78,6 +89,12 @@ def article_detail(request, article_id):
 
     A user who may not see the article gets "404 Not Found", so the page
     does not reveal that a pending article exists.
+
+    :param request: The HTTP request.
+    :param article_id: The article's ID, from the URL.
+    :returns: The article's page.
+    :raises Http404: If the article does not exist, or the user may not
+        see it.
     """
     article = get_object_or_404(
         articles_visible_to(request.user).select_related(
@@ -122,6 +139,13 @@ def approve_article(request, article_id):
     An editor approves the articles of their publication, and a
     journalist approves their own independent articles. Anyone else gets
     "404 Not Found".
+
+    :param request: The HTTP request.
+    :param article_id: The article's ID, from the URL.
+    :returns: The confirmation page, or a redirect to the dashboard once
+        the article is approved.
+    :raises Http404: If the article does not exist, is already approved,
+        or the user may not approve it.
     """
     article = get_object_or_404(
         articles_user_can_approve(request.user).select_related(
@@ -156,6 +180,13 @@ def edit_article(request, article_id):
     The author can edit their own independent articles, and the staff of
     a publication can edit its articles. Anyone else gets "404 Not
     Found". An approved article stays approved.
+
+    :param request: The HTTP request.
+    :param article_id: The article's ID, from the URL.
+    :returns: The article form, or a redirect to the dashboard once the
+        changes are saved.
+    :raises Http404: If the article does not exist, or the user may not
+        change it.
     """
     article = get_object_or_404(
         articles_user_can_change(request.user),
@@ -200,6 +231,13 @@ def delete_article(request, article_id):
     The same users who can edit an article can delete it. Anyone else
     gets "404 Not Found". Deleting it also removes it from every
     newsletter that included it.
+
+    :param request: The HTTP request.
+    :param article_id: The article's ID, from the URL.
+    :returns: The confirmation page, or a redirect to the dashboard once
+        the article is deleted.
+    :raises Http404: If the article does not exist, or the user may not
+        change it.
     """
     article = get_object_or_404(
         articles_user_can_change(request.user),
