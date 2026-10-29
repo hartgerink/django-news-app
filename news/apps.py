@@ -1,7 +1,17 @@
+"""
+The news app's configuration, which connects the approval signals.
+"""
+
 from django.apps import AppConfig
 
 
 class NewsConfig(AppConfig):
+    """
+    The news app's configuration.
+
+    :cvar name: The app's name, which Django uses to find it.
+    """
+
     name = "news"
 
     def ready(self):

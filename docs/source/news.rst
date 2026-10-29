@@ -34,6 +34,11 @@ news.forms
 
 .. automodule:: news.forms
 
+news.admin
+----------
+
+.. automodule:: news.admin
+
 Views
 -----
 

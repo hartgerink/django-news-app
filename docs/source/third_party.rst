@@ -18,3 +18,8 @@ third_party.views
 -----------------
 
 .. automodule:: third_party.views
+
+third_party.admin
+-----------------
+
+.. automodule:: third_party.admin

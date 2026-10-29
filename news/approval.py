@@ -1,3 +1,11 @@
+"""
+What happens when an article is approved: it is emailed to its
+subscribers and shared with the third party.
+
+The approval signals in ``news/signals.py`` call these functions. A
+failure in either one is logged, and the approval still stands.
+"""
+
 import logging
 
 import requests
@@ -6,8 +14,8 @@ from django.core.mail import send_mass_mail
 
 logger = logging.getLogger(__name__)
 
-# How long to wait for the third party to answer, so a slow or missing
-# server cannot hold up an approval.
+#: How long to wait for the third party to answer, in seconds, so a slow
+#: or missing server cannot hold up an approval.
 THIRD_PARTY_TIMEOUT_SECONDS = 5
 
 
@@ -18,6 +26,9 @@ def get_recipients(article):
 
     A publication article goes to the publication's subscribers. An
     independent article goes to its author's subscribers.
+
+    :param article: The approved ``Article``.
+    :returns: A list of the subscribers' email addresses.
     """
     if article.publication is not None:
         subscribers = article.publication.subscribers
@@ -34,6 +45,8 @@ def notify_subscribers(article):
     Each reader gets their own copy, so no reader sees the other
     readers' addresses. A failure is logged, and the approval still
     stands.
+
+    :param article: The approved ``Article``.
     """
     where = article.publication.name if article.publication else "Independent"
     subject = f"New article: {article.title}"
@@ -61,7 +74,11 @@ def share_article(article):
     """
     Sends an approved article to the third-party API as JSON.
 
-    A failure of any kind is logged, and the approval still stands.
+    It goes to the address in the ``THIRD_PARTY_API_URL`` setting, with
+    the ``THIRD_PARTY_API_KEY`` setting in the ``X-API-Key`` header. A
+    failure of any kind is logged, and the approval still stands.
+
+    :param article: The approved ``Article``.
     """
     # Plain text copies of the article's details, in the fields the
     # third party stores.

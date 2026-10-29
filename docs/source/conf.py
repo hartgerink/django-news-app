@@ -46,6 +46,10 @@ autodoc_default_options = {
     "exclude-members": "DoesNotExist, MultipleObjectsReturned, NotUpdated",
 }
 
+# Show each class's __init__ docstring with the class's own docstring,
+# so the forms' arguments, such as author, are documented.
+autoclass_content = "both"
+
 exclude_patterns = []
 
 language = "en"
