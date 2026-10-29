@@ -43,8 +43,18 @@ RUN apt-get update \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the project into /app in the image. .dockerignore keeps .env,
-# venv, and other files that do not belong in an image out of it.
+# Copy the project into /app in the image. COPY takes a source, then a
+# destination, and each "." means something different:
+# - The first "." is the source: the build context, the folder named
+#   at the end of docker build. Run from the project root,
+#   "docker build -t django-news-app ." makes that the project root,
+#   so "." is everything in it, apart from what .dockerignore leaves
+#   out, such as .env and venv.
+# - The second "." is the destination: the current folder inside the
+#   image, which WORKDIR set to /app.
+# So COPY . . copies the contents of the project root into /app, for
+# example manage.py to /app/manage.py and news/ to /app/news/. The
+# earlier "COPY requirements.txt ." works the same way, with one file.
 COPY . .
 
 # The port the development server listens on, for documentation and
