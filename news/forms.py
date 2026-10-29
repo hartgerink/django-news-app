@@ -1,3 +1,8 @@
+"""
+The news app's forms: for writing articles, putting together
+newsletters, and setting up publications.
+"""
+
 from django import forms
 from django.db.models import Q
 
@@ -27,6 +32,13 @@ class ArticleForm(forms.ModelForm):
         """
         Builds the form for the article's author, offering only the
         publications they are on the staff of.
+
+        :param args: Passed on to Django's ``ModelForm``, such as the
+            submitted data.
+        :param author: The ``User`` writing the article, or its author
+            when it is being edited.
+        :param kwargs: Passed on to Django's ``ModelForm``, such as the
+            ``instance`` being edited.
         """
         super().__init__(*args, **kwargs)
 
@@ -61,6 +73,9 @@ class NewsletterForm(forms.ModelForm):
     An independent newsletter can include only its author's approved
     independent articles. A publication's newsletter can include only
     that publication's approved articles.
+
+    :ivar author: The newsletter's author, which :meth:`clean` uses to
+        check the chosen articles.
     """
 
     class Meta:
@@ -75,6 +90,13 @@ class NewsletterForm(forms.ModelForm):
         """
         Builds the form for the newsletter's author, offering only the
         publications and articles they may use.
+
+        :param args: Passed on to Django's ``ModelForm``, such as the
+            submitted data.
+        :param author: The ``User`` putting the newsletter together, or
+            its author when it is being edited.
+        :param kwargs: Passed on to Django's ``ModelForm``, such as the
+            ``instance`` being edited.
         """
         super().__init__(*args, **kwargs)
         self.author = author
@@ -116,6 +138,10 @@ class NewsletterForm(forms.ModelForm):
         """
         The label beside an article's checkbox: its title, author, and
         publication.
+
+        :param article: The ``Article`` to label.
+        :returns: The label, such as ``What the Fog Remembers (by James,
+            Independent)``.
         """
         if article.publication:
             where = article.publication.name
@@ -127,6 +153,9 @@ class NewsletterForm(forms.ModelForm):
         """
         Checks that every chosen article fits the newsletter's
         publication, and names the ones that do not.
+
+        :returns: The form's cleaned data. An article that does not fit
+            adds an error to the ``articles`` field instead.
         """
         cleaned_data = super().clean()
         articles = cleaned_data.get("articles")
@@ -184,6 +213,11 @@ class PublicationForm(forms.ModelForm):
         """
         Builds the form, offering every editor and journalist as staff,
         by username.
+
+        :param args: Passed on to Django's ``ModelForm``, such as the
+            submitted data.
+        :param kwargs: Passed on to Django's ``ModelForm``, such as the
+            ``instance`` being edited.
         """
         super().__init__(*args, **kwargs)
 

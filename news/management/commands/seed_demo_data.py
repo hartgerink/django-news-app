@@ -1,23 +1,27 @@
-# Seed demo data
-# --------------
-# Fills a blank database with the sample accounts, publications,
-# subscriptions, articles, and newsletters in _demo_data.py, and a
-# superuser for the Django admin, for looking at the site and trying it
-# out by hand. Unit tests do not use it; each test creates its own
-# data.
-#
-# It only runs on a blank database: one with no users, publications,
-# articles, or newsletters. That is what keeps it simple. It creates
-# everything in one pass, with no checks for what already exists.
-#
-# How to run it
-# -------------
-# From the folder that contains manage.py, after migrate_all and
-# setup_groups_and_permissions:
-#     python manage.py seed_demo_data
-# If the database already has data, empty it first:
-#     python manage.py delete_all_data
-#     python manage.py seed_demo_data
+"""
+The ``seed_demo_data`` management command.
+
+Fills a blank database with the sample accounts, publications,
+subscriptions, articles, and newsletters in ``_demo_data.py``, and a
+superuser for the Django admin, for looking at the site and trying it
+out by hand. Unit tests do not use it; each test creates its own data.
+
+It only runs on a blank database: one with no users, publications,
+articles, or newsletters. That is what keeps it simple. It creates
+everything in one pass, with no checks for what already exists.
+
+.. rubric:: How to run it
+
+From the folder that contains ``manage.py``, after ``migrate_all`` and
+``setup_groups_and_permissions``::
+
+    python manage.py seed_demo_data
+
+If the database already has data, empty it first::
+
+    python manage.py delete_all_data
+    python manage.py seed_demo_data
+"""
 
 from datetime import timedelta
 
@@ -34,9 +38,10 @@ from . import _demo_data as demo_data
 
 class Command(BaseCommand):
     """
-    Fill a blank database with the demo data in _demo_data.py.
+    Fill a blank database with the demo data in ``_demo_data.py``.
 
-    Run it on a blank database, after setup_groups_and_permissions:
+    Run it on a blank database, after ``setup_groups_and_permissions``::
+
         python manage.py seed_demo_data
 
     It stops without changing anything if the database already has any
@@ -56,6 +61,8 @@ class Command(BaseCommand):
         """
         Check that the database is blank, then create the demo data.
 
+        :param args: Positional arguments from Django. Not used.
+        :param options: The command's options, from Django. Not used.
         :raises CommandError: If the database is not blank, or the role
                               groups have not been set up yet.
         """
@@ -115,11 +122,12 @@ class Command(BaseCommand):
 
     def create_users(self):
         """
-        Create each account in USERS, and the superuser in SUPERUSER.
-        User.save() puts each one in its role's group.
+        Create each account in ``USERS``, and the superuser in
+        ``SUPERUSER``. ``User.save()`` puts each one in its role's
+        group.
 
-        :return: The new users, by username. For example:
-                 users["Paul"]  # the Publisher Paul
+        :returns: The new users, by username. For example,
+            ``users["Paul"]`` is the Publisher Paul.
         """
         users = {}
         for details in demo_data.USERS:
@@ -140,12 +148,12 @@ class Command(BaseCommand):
 
     def create_publications(self, users):
         """
-        Create each publication in PUBLICATIONS, with its owner and
+        Create each publication in ``PUBLICATIONS``, with its owner and
         staff.
 
         :param users: The new users, by username.
-        :return: The new publications, by name. For example:
-                 publications[demo_data.GAZETTE]
+        :returns: The new publications, by name. For example,
+            ``publications[demo_data.GAZETTE]``.
         """
         publications = {}
         for details in demo_data.PUBLICATIONS:
@@ -165,12 +173,12 @@ class Command(BaseCommand):
 
     def create_subscriptions(self, users, publications):
         """
-        Subscribe each Reader in SUBSCRIPTIONS to their publications and
-        journalists.
+        Subscribe each Reader in ``SUBSCRIPTIONS`` to their publications
+        and journalists.
 
         :param users: The new users, by username.
         :param publications: The new publications, by name.
-        :return: How many subscriptions were created.
+        :returns: How many subscriptions were created.
         """
         count = 0
         for details in demo_data.SUBSCRIPTIONS:
@@ -187,7 +195,8 @@ class Command(BaseCommand):
 
     def create_articles(self, users, publications):
         """
-        Create each article in ARTICLES, dated days_ago days back.
+        Create each article in ``ARTICLES``, dated ``days_ago`` days
+        back.
 
         Articles created already approved do not email subscribers or
         share the article with the third party, since the approval
@@ -195,7 +204,7 @@ class Command(BaseCommand):
 
         :param users: The new users, by username.
         :param publications: The new publications, by name.
-        :return: The new articles, by title.
+        :returns: The new articles, by title.
         """
         articles = {}
         for details in demo_data.ARTICLES:
@@ -215,8 +224,8 @@ class Command(BaseCommand):
 
     def create_newsletters(self, users, publications, articles):
         """
-        Create each newsletter in NEWSLETTERS, with its articles, dated
-        days_ago days back.
+        Create each newsletter in ``NEWSLETTERS``, with its articles,
+        dated ``days_ago`` days back.
 
         :param users: The new users, by username.
         :param publications: The new publications, by name.
@@ -240,13 +249,14 @@ class Command(BaseCommand):
         Move an article's or newsletter's creation date back by a number
         of days.
 
-        created_at is filled in automatically when an item is first
+        ``created_at`` is filled in automatically when an item is first
         saved, and that value cannot be set on creation, so it is
-        changed afterward with update(), which writes straight to the
-        database. For example:
+        changed afterward with ``update()``, which writes straight to
+        the database. For example::
+
             self.backdate(article, 3)  # created three days ago
 
-        :param item: The Article or Newsletter just created.
+        :param item: The ``Article`` or ``Newsletter`` just created.
         :param days_ago: How many days ago it should say it was created.
         """
         created_at = timezone.now() - timedelta(days=days_ago)

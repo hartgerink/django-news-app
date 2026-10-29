@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>accounts.management.commands.setup_groups_and_permissions &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">accounts.management.commands.setup_groups_and_permissions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for accounts.management.commands.setup_groups_and_permissions</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The ``setup_groups_and_permissions`` management command, which creates</span>
+<span class="sd">the four role groups and gives each one its permissions.</span>
+
+<span class="sd">.. rubric:: Django management commands</span>
+
+<span class="sd">A management command is a task you run from the command line through</span>
+<span class="sd">``manage.py``, such as ``migrate``, ``runserver``, or</span>
+<span class="sd">``createsuperuser``. A project can add its own commands, and this file</span>
+<span class="sd">is one of them.</span>
+
+<span class="sd">.. rubric:: How Django finds a command</span>
+
+<span class="sd">Django looks in the ``management/commands/`` folder of every app in</span>
+<span class="sd">``INSTALLED_APPS``. Both ``management/`` and ``management/commands/``</span>
+<span class="sd">need an ``__init__.py`` file. Each other ``.py`` file in</span>
+<span class="sd">``management/commands/`` becomes a command named after the file. For</span>
+<span class="sd">example, this file::</span>
+
+<span class="sd">    accounts/management/commands/setup_groups_and_permissions.py</span>
+
+<span class="sd">becomes::</span>
+
+<span class="sd">    python manage.py setup_groups_and_permissions</span>
+
+<span class="sd">.. rubric:: How a command works</span>
+
+<span class="sd">The file must contain a class named exactly ``Command``, built on</span>
+<span class="sd">Django's ``BaseCommand``. When the command runs, Django calls the</span>
+<span class="sd">class's ``handle()`` method, which is where the work is done. The class</span>
+<span class="sd">can also have:</span>
+
+<span class="sd">- ``help``: the description shown by</span>
+<span class="sd">  ``python manage.py help &lt;command&gt;``.</span>
+<span class="sd">- ``add_arguments()``: for options, such as ``--dry-run``.</span>
+
+<span class="sd">Inside ``handle()``, ``self.stdout.write()`` prints output, and raising</span>
+<span class="sd">``CommandError`` stops the command with an error message.</span>
+
+<span class="sd">.. rubric:: How to run a command</span>
+
+<span class="sd">From the folder that contains ``manage.py``::</span>
+
+<span class="sd">    python manage.py &lt;command&gt;</span>
+
+<span class="sd">To list every available command, including the project's own::</span>
+
+<span class="sd">    python manage.py help</span>
+
+<span class="sd">To show one command's description and options::</span>
+
+<span class="sd">    python manage.py help &lt;command&gt;</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Group</span><span class="p">,</span> <span class="n">Permission</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.core.management.base</span><span class="w"> </span><span class="kn">import</span> <span class="n">BaseCommand</span><span class="p">,</span> <span class="n">CommandError</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">accounts.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+<span class="c1">#: The permissions each role's group gets, as Django permission</span>
+<span class="c1">#: codenames (``action_model``). Every model here is in the news app.</span>
+<span class="c1">#: For example::</span>
+<span class="c1">#:</span>
+<span class="c1">#:     "add_article"       # may create articles</span>
+<span class="c1">#:     "view_publication"  # may view publications</span>
+<span class="c1">#:</span>
+<span class="c1">#: Most are the four permissions Django creates for every model: add,</span>
+<span class="c1">#: view, change, and delete. ``approve_article`` is a custom permission,</span>
+<span class="c1">#: declared in the ``Article`` model's ``Meta`` class. It says only that</span>
+<span class="c1">#: a role may approve articles at all; ``news/access.py`` decides which</span>
+<span class="c1">#: articles.</span>
+<span class="n">GROUP_PERMISSIONS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">READER</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"view_article"</span><span class="p">,</span>
+        <span class="s2">"view_newsletter"</span><span class="p">,</span>
+        <span class="s2">"view_publication"</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">PUBLISHER</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"view_article"</span><span class="p">,</span>
+        <span class="s2">"view_newsletter"</span><span class="p">,</span>
+        <span class="s2">"add_publication"</span><span class="p">,</span>
+        <span class="s2">"view_publication"</span><span class="p">,</span>
+        <span class="s2">"change_publication"</span><span class="p">,</span>
+        <span class="s2">"delete_publication"</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">EDITOR</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"view_article"</span><span class="p">,</span>
+        <span class="s2">"change_article"</span><span class="p">,</span>
+        <span class="s2">"delete_article"</span><span class="p">,</span>
+        <span class="s2">"approve_article"</span><span class="p">,</span>
+        <span class="s2">"view_newsletter"</span><span class="p">,</span>
+        <span class="s2">"change_newsletter"</span><span class="p">,</span>
+        <span class="s2">"delete_newsletter"</span><span class="p">,</span>
+        <span class="s2">"view_publication"</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n">User</span><span class="o">.</span><span class="n">JOURNALIST</span><span class="p">:</span> <span class="p">[</span>
+        <span class="s2">"add_article"</span><span class="p">,</span>
+        <span class="s2">"view_article"</span><span class="p">,</span>
+        <span class="s2">"change_article"</span><span class="p">,</span>
+        <span class="s2">"delete_article"</span><span class="p">,</span>
+        <span class="s2">"approve_article"</span><span class="p">,</span>
+        <span class="s2">"add_newsletter"</span><span class="p">,</span>
+        <span class="s2">"view_newsletter"</span><span class="p">,</span>
+        <span class="s2">"change_newsletter"</span><span class="p">,</span>
+        <span class="s2">"delete_newsletter"</span><span class="p">,</span>
+        <span class="s2">"view_publication"</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="Command">
+<a class="viewcode-back" href="../../../../accounts.html#accounts.management.commands.setup_groups_and_permissions.Command">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">Command</span><span class="p">(</span><span class="n">BaseCommand</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Create the four role groups and give each group its permissions.</span>
+
+<span class="sd">    Run it after the tables are built with ``migrate_all``, and again</span>
+<span class="sd">    after ``remove_groups_and_permissions``::</span>
+
+<span class="sd">        python manage.py setup_groups_and_permissions</span>
+
+<span class="sd">    It is safe to run again. Groups that already exist are kept, and</span>
+<span class="sd">    each group's permissions are replaced with exactly its list in</span>
+<span class="sd">    :data:`GROUP_PERMISSIONS`, so the groups always match it.</span>
+<span class="sd">    """</span>
+
+    <span class="n">help</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="s2">"Creates the Readers, Publishers, Editors, and Journalists groups, "</span>
+        <span class="s2">"and sets the permissions for each group."</span>
+    <span class="p">)</span>
+
+<div class="viewcode-block" id="Command.handle">
+<a class="viewcode-back" href="../../../../accounts.html#accounts.management.commands.setup_groups_and_permissions.Command.handle">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Create or update each group, then set its permissions.</span>
+
+<span class="sd">        :param args: Positional arguments from Django. Not used.</span>
+<span class="sd">        :param options: The command's options, from Django. Not used.</span>
+<span class="sd">        :raises CommandError: If a permission does not exist yet, which</span>
+<span class="sd">                              means the migrations have not been run,</span>
+<span class="sd">                              or a custom permission is not declared.</span>
+<span class="sd">        """</span>
+        <span class="n">news_permissions</span> <span class="o">=</span> <span class="n">Permission</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+            <span class="n">content_type__app_label</span><span class="o">=</span><span class="s2">"news"</span>
+        <span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">role</span><span class="p">,</span> <span class="n">codenames</span> <span class="ow">in</span> <span class="n">GROUP_PERMISSIONS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># The group's name comes from the User model, so it always</span>
+            <span class="c1"># matches the group that User.save() puts users in.</span>
+            <span class="n">group_name</span> <span class="o">=</span> <span class="n">User</span><span class="o">.</span><span class="n">ROLE_GROUPS</span><span class="p">[</span><span class="n">role</span><span class="p">]</span>
+            <span class="n">group</span><span class="p">,</span> <span class="n">created</span> <span class="o">=</span> <span class="n">Group</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">get_or_create</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="n">group_name</span><span class="p">)</span>
+
+            <span class="n">permissions</span> <span class="o">=</span> <span class="n">news_permissions</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">codename__in</span><span class="o">=</span><span class="n">codenames</span><span class="p">)</span>
+
+            <span class="c1"># Stop if any permission is missing, instead of giving a</span>
+            <span class="c1"># group only some of its permissions.</span>
+            <span class="k">if</span> <span class="n">permissions</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">codenames</span><span class="p">):</span>
+                <span class="n">found</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">permissions</span><span class="o">.</span><span class="n">values_list</span><span class="p">(</span><span class="s2">"codename"</span><span class="p">,</span> <span class="n">flat</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+                <span class="n">missing</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">codenames</span><span class="p">)</span> <span class="o">-</span> <span class="n">found</span><span class="p">))</span>
+                <span class="k">raise</span> <span class="n">CommandError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Missing permissions for </span><span class="si">{</span><span class="n">group_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">. "</span>
+                    <span class="s2">"Run python manage.py migrate first, and check that "</span>
+                    <span class="s2">"any custom permission is declared in its model."</span>
+                <span class="p">)</span>
+
+            <span class="n">group</span><span class="o">.</span><span class="n">permissions</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">permissions</span><span class="p">)</span>
+
+            <span class="n">action</span> <span class="o">=</span> <span class="s2">"Created"</span> <span class="k">if</span> <span class="n">created</span> <span class="k">else</span> <span class="s2">"Updated"</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">action</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">group_name</span><span class="si">}</span><span class="s2"> with "</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">codenames</span><span class="p">)</span><span class="si">}</span><span class="s2"> permissions."</span>
+                <span class="p">)</span>
+            <span class="p">)</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,33 +1,37 @@
-# Demo data
-# ---------
-# The sample accounts, publications, subscriptions, articles, and
-# newsletters that seed_demo_data loads. This file holds only the
-# data; the command decides how to load it.
-#
-# The pieces are linked by name: owners, staff, readers, subscribed
-# journalists, and authors are usernames from USERS; publications are
-# names from PUBLICATIONS; and a newsletter's articles are titles from
-# ARTICLES.
-#
-# The underscore at the start of the file's name keeps Django from
-# treating it as a command. Every other .py file in management/commands/
-# becomes one. seed_demo_data, in the same folder, reads the data with:
-#     from . import _demo_data as demo_data
-#     demo_data.USERS  # the list of accounts
+"""
+The sample accounts, publications, subscriptions, articles, and
+newsletters that ``seed_demo_data`` loads. This file holds only the
+data; the command decides how to load it.
+
+The pieces are linked by name: owners, staff, readers, subscribed
+journalists, and authors are usernames from ``USERS``; publications
+are names from ``PUBLICATIONS``; and a newsletter's articles are titles
+from ``ARTICLES``.
+
+The underscore at the start of the file's name keeps Django from
+treating it as a command. Every other ``.py`` file in
+``management/commands/`` becomes one. ``seed_demo_data``, in the same
+folder, reads the data with::
+
+    from . import _demo_data as demo_data
+    demo_data.USERS  # the list of accounts
+"""
 
 from accounts.models import User
 
-# Every demo account uses this password.
+#: Every demo account uses this password.
 PASSWORD = "newspaper"
 
-# The demo accounts. Two of each role cover the usual situations, and a
-# few more cover the rest:
-#     "Jonah"   # a Journalist on the staff of both publications
-#     "Jade"    # an independent Journalist, on no publication's staff
-#     "Ezra"    # an Editor on the staff of both publications
-#     "Esther"  # an Editor on no publication's staff
-#     "Rosa"    # a Reader who subscribes to nothing
-# Each account logs in with its username and the password above.
+#: The demo accounts. Two of each role cover the usual situations, and
+#: a few more cover the rest::
+#:
+#:     "Jonah"   # a Journalist on the staff of both publications
+#:     "Jade"    # an independent Journalist, on no publication's staff
+#:     "Ezra"    # an Editor on the staff of both publications
+#:     "Esther"  # an Editor on no publication's staff
+#:     "Rosa"    # a Reader who subscribes to nothing
+#:
+#: Each account logs in with its username and the password above.
 USERS = [
     {
         "username": "Paul",
@@ -96,24 +100,27 @@ USERS = [
     },
 ]
 
-# A superuser for the Django admin, with the same password.
+#: A superuser for the Django admin, with the same password.
 SUPERUSER = {
     "username": "admin",
     "email": "admin@djangonews.local",
 }
 
-# The demo publications' names, also used in SUBSCRIPTIONS, ARTICLES,
-# and NEWSLETTERS, so a typo raises an error instead of linking to a
-# publication that does not exist.
+#: The demo publications' names, also used in ``SUBSCRIPTIONS``,
+#: ``ARTICLES``, and ``NEWSLETTERS``, so a typo raises an error instead
+#: of linking to a publication that does not exist.
 GAZETTE = "The Lamplight Gazette"
+#: The second demo publication's name, used the same way as
+#: ``GAZETTE``.
 COURIER = "The Copper Kettle Courier"
 
-# The demo publications, one owned by each demo Publisher. Each has two
-# editors and two journalists on its staff: its own pair, plus Ezra and
-# Jonah, who work for both. The owner, editors, and journalists are
-# usernames from USERS. For example:
-#     "Paul"    # owns The Lamplight Gazette
-#     "Elena"   # edits for The Lamplight Gazette
+#: The demo publications, one owned by each demo Publisher. Each has
+#: two editors and two journalists on its staff: its own pair, plus Ezra
+#: and Jonah, who work for both. The owner, editors, and journalists are
+#: usernames from ``USERS``. For example::
+#:
+#:     "Paul"    # owns The Lamplight Gazette
+#:     "Elena"   # edits for The Lamplight Gazette
 PUBLICATIONS = [
     {
         "name": GAZETTE,
@@ -137,14 +144,15 @@ PUBLICATIONS = [
     },
 ]
 
-# What each demo Reader subscribes to. The two Readers subscribe to
-# different things, so each one's subscribed articles differ. A
-# subscription to a journalist covers only their independent articles,
-# so Rhonda gets Julia's independent articles through her subscription
-# to Julia, and Julia's Courier articles through her subscription to The
-# Copper Kettle Courier. Rosa is not listed, so she subscribes to
-# nothing. For example:
-#     "Richard", GAZETTE  # Richard subscribes to The Lamplight Gazette
+#: What each demo Reader subscribes to. The two Readers subscribe to
+#: different things, so each one's subscribed articles differ. A
+#: subscription to a journalist covers only their independent articles,
+#: so Rhonda gets Julia's independent articles through her subscription
+#: to Julia, and Julia's Courier articles through her subscription to
+#: The Copper Kettle Courier. Rosa is not listed, so she subscribes to
+#: nothing. For example::
+#:
+#:     "Richard", GAZETTE  # Richard subscribes to The Lamplight Gazette
 SUBSCRIPTIONS = [
     {
         "reader": "Richard",
@@ -158,16 +166,17 @@ SUBSCRIPTIONS = [
     },
 ]
 
-# The demo articles. James and Julia each write three for their own
-# publication, two approved and one pending, plus two independent
-# articles, one approved and one pending. Jonah writes for both
-# publications, and Jade writes only independent articles. The author
-# is a username from USERS, and publication is None for an independent
-# article. days_ago sets how long ago the article was created, so the
-# lists show different dates. For example:
-#     "publication": GAZETTE  # filed under The Lamplight Gazette
-#     "publication": None     # independent
-#     "days_ago": 3           # created 3 days before the command ran
+#: The demo articles. James and Julia each write three for their own
+#: publication, two approved and one pending, plus two independent
+#: articles, one approved and one pending. Jonah writes for both
+#: publications, and Jade writes only independent articles. The author
+#: is a username from ``USERS``, and ``publication`` is ``None`` for an
+#: independent article. ``days_ago`` sets how long ago the article was
+#: created, so the lists show different dates. For example::
+#:
+#:     "publication": GAZETTE  # filed under The Lamplight Gazette
+#:     "publication": None     # independent
+#:     "days_ago": 3           # created 3 days before the command ran
 ARTICLES = [
     {
         "title": "Night Market Lanterns Return to Canal Street",
@@ -440,17 +449,19 @@ ARTICLES = [
     },
 ]
 
-# The demo newsletters: one for each publication by its own journalist,
-# one each of James's and Julia's independent work, and Jonah's Gazette
-# Weekend Edition, which includes James's Night Market article, so that
-# article is in two newsletters. The author is a username from USERS,
-# publication is None for an independent newsletter, and articles are
-# titles from ARTICLES. Every article must fit its newsletter: for an
-# independent one, the author's own approved independent articles; for
-# a publication's, that publication's approved articles, whoever wrote
-# them. days_ago sets how long ago the newsletter was created. For
-# example:
-#     "Lamplight After Dark"  # James's newsletter for the Gazette
+#: The demo newsletters: one for each publication by its own
+#: journalist, one each of James's and Julia's independent work, and
+#: Jonah's Gazette Weekend Edition, which includes James's Night Market
+#: article, so that article is in two newsletters. The author is a
+#: username from ``USERS``, ``publication`` is ``None`` for an
+#: independent newsletter, and ``articles`` are titles from
+#: ``ARTICLES``. Every article must fit its newsletter: for an
+#: independent one, the author's own approved independent articles; for
+#: a publication's, that publication's approved articles, whoever wrote
+#: them. ``days_ago`` sets how long ago the newsletter was created. For
+#: example::
+#:
+#:     "Lamplight After Dark"  # James's newsletter for the Gazette
 NEWSLETTERS = [
     {
         "title": "Lamplight After Dark",

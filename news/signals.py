@@ -1,3 +1,12 @@
+"""
+The approval signals, which email an article to its subscribers and
+share it with the third party when it is approved.
+
+Django calls these handlers before and after every ``Article`` is
+saved. They are connected when the app starts, in
+``NewsConfig.ready()``.
+"""
+
 from django.db import transaction
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
@@ -9,8 +18,13 @@ from .models import Article
 @receiver(pre_save, sender=Article)
 def remember_previous_approval(sender, instance, **kwargs):
     """
-    Before an article is saved, notes whether it was pending, so the
-    handler below can tell whether this save approved it.
+    Before an article is saved, notes whether it was pending, so
+    :func:`announce_approval` can tell whether this save approved it.
+
+    :param sender: The model being saved, ``Article``.
+    :param instance: The ``Article`` about to be saved.
+    :param kwargs: The other arguments of Django's ``pre_save`` signal.
+        Not used.
     """
     if instance.pk is None:
         # A new article has no earlier version to compare with, so
@@ -32,6 +46,11 @@ def announce_approval(sender, instance, **kwargs):
 
     Approving from a page, the admin or the API all run this once, and
     later updates to the article run nothing.
+
+    :param sender: The model that was saved, ``Article``.
+    :param instance: The ``Article`` just saved.
+    :param kwargs: The other arguments of Django's ``post_save`` signal.
+        Not used.
     """
     if instance.approved and instance._was_pending:
         # Waits until the approval is saved for good, so nothing is sent

@@ -1,0 +1,366 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>api.views &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">api.views</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for api.views</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The REST API's article endpoints.</span>
+
+<span class="sd">Every endpoint in this file needs a valid token in the</span>
+<span class="sd">``Authorization`` header, the default for Django REST Framework (DRF)</span>
+<span class="sd">views set in ``REST_FRAMEWORK`` in ``settings.py``. A request with a</span>
+<span class="sd">missing or invalid token gets 401 Unauthorized before the view runs.</span>
+
+<span class="sd">The endpoint that gives users their tokens is not defined here. It is</span>
+<span class="sd">DRF's ready-made token view, routed in ``urls.py``, which returns a</span>
+<span class="sd">user's token for their username and password.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.shortcuts</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_object_or_404</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializers</span><span class="p">,</span> <span class="n">status</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">api_view</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework.response</span><span class="w"> </span><span class="kn">import</span> <span class="n">Response</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">accounts.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">news.access</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">articles_user_can_approve</span><span class="p">,</span>
+    <span class="n">articles_user_can_change</span><span class="p">,</span>
+    <span class="n">articles_visible_to</span><span class="p">,</span>
+    <span class="n">subscribed_articles</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">news.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Article</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.serializers</span><span class="w"> </span><span class="kn">import</span> <span class="n">ArticleSerializer</span>
+
+
+<div class="viewcode-block" id="fields_not_valid">
+<a class="viewcode-back" href="../../api.html#api.views.fields_not_valid">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">fields_not_valid</span><span class="p">(</span><span class="n">errors</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The response to data with missing or invalid fields, listing each</span>
+<span class="sd">    field and what is wrong with it.</span>
+
+<span class="sd">    :param errors: The errors for each field, such as a serializer's</span>
+<span class="sd">        ``errors``.</span>
+<span class="sd">    :returns: A 400 Bad Request response, with the errors.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+        <span class="p">{</span><span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Some fields are missing or not valid."</span><span class="p">,</span> <span class="s2">"errors"</span><span class="p">:</span> <span class="n">errors</span><span class="p">},</span>
+        <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="contains">
+<a class="viewcode-back" href="../../api.html#api.views.contains">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">contains</span><span class="p">(</span><span class="n">articles</span><span class="p">,</span> <span class="n">article</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Whether a queryset of articles, such as the ones a user can change,</span>
+<span class="sd">    includes this article.</span>
+
+<span class="sd">    :param articles: A queryset of ``Article`` objects.</span>
+<span class="sd">    :param article: The ``Article`` object to look for.</span>
+<span class="sd">    :returns: ``True`` if the queryset includes the article, otherwise</span>
+<span class="sd">        ``False``.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">articles</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">pk</span><span class="o">=</span><span class="n">article</span><span class="o">.</span><span class="n">pk</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="articles">
+<a class="viewcode-back" href="../../api.html#api.views.articles">[docs]</a>
+<span class="nd">@api_view</span><span class="p">([</span><span class="s2">"GET"</span><span class="p">,</span> <span class="s2">"POST"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">articles</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    GET lists every approved article, newest first.</span>
+
+<span class="sd">    POST creates an article written by the caller, which starts as</span>
+<span class="sd">    pending. Only journalists can create articles.</span>
+
+<span class="sd">    :param request: The API request. For POST, the new article as JSON.</span>
+<span class="sd">    :returns: For GET, the approved articles. For POST, 201 Created,</span>
+<span class="sd">        with the new article; 403 Forbidden if the caller is not a</span>
+<span class="sd">        journalist; or 400 Bad Request, with each missing or invalid</span>
+<span class="sd">        field.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"GET"</span><span class="p">:</span>
+        <span class="n">approved</span> <span class="o">=</span> <span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">approved</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span>
+            <span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">ArticleSerializer</span><span class="p">(</span><span class="n">approved</span><span class="p">,</span> <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">has_perm</span><span class="p">(</span><span class="s2">"news.add_article"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Only journalists can create articles."</span><span class="p">},</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">serializer</span> <span class="o">=</span> <span class="n">ArticleSerializer</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s2">"request"</span><span class="p">:</span> <span class="n">request</span><span class="p">}</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">serializer</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">fields_not_valid</span><span class="p">(</span><span class="n">serializer</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
+
+    <span class="c1"># The caller is the author. Any "approved" value sent is ignored, so</span>
+    <span class="c1"># the new article is pending.</span>
+    <span class="n">serializer</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">author</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">serializer</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_201_CREATED</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="subscribed">
+<a class="viewcode-back" href="../../api.html#api.views.subscribed">[docs]</a>
+<span class="nd">@api_view</span><span class="p">([</span><span class="s2">"GET"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">subscribed</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    GET lists the approved articles from the caller's subscriptions,</span>
+<span class="sd">    the same articles as on a reader's dashboard. Only readers have</span>
+<span class="sd">    subscriptions.</span>
+
+<span class="sd">    :param request: The API request.</span>
+<span class="sd">    :returns: The articles from the caller's subscriptions, or 403</span>
+<span class="sd">        Forbidden if the caller is not a reader.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">role</span> <span class="o">!=</span> <span class="n">User</span><span class="o">.</span><span class="n">READER</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Only readers have subscriptions."</span><span class="p">},</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">articles</span> <span class="o">=</span> <span class="n">subscribed_articles</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span>
+        <span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">ArticleSerializer</span><span class="p">(</span><span class="n">articles</span><span class="p">,</span> <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="pending">
+<a class="viewcode-back" href="../../api.html#api.views.pending">[docs]</a>
+<span class="nd">@api_view</span><span class="p">([</span><span class="s2">"GET"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pending</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    GET lists the pending articles the caller can approve, oldest</span>
+<span class="sd">    first, so the ones that have waited longest come first: a</span>
+<span class="sd">    publication's articles for its editors, and a journalist's own</span>
+<span class="sd">    independent articles for them. Only editors and journalists can</span>
+<span class="sd">    approve articles.</span>
+
+<span class="sd">    :param request: The API request.</span>
+<span class="sd">    :returns: The pending articles the caller can approve, or 403</span>
+<span class="sd">        Forbidden if the caller cannot approve articles.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">has_perm</span><span class="p">(</span><span class="s2">"news.approve_article"</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+            <span class="p">{</span><span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Only editors and journalists can approve articles."</span><span class="p">},</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">articles</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">articles_user_can_approve</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span><span class="p">)</span>
+        <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"created_at"</span><span class="p">)</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">ArticleSerializer</span><span class="p">(</span><span class="n">articles</span><span class="p">,</span> <span class="n">many</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="article_detail">
+<a class="viewcode-back" href="../../api.html#api.views.article_detail">[docs]</a>
+<span class="nd">@api_view</span><span class="p">([</span><span class="s2">"GET"</span><span class="p">,</span> <span class="s2">"PUT"</span><span class="p">,</span> <span class="s2">"PATCH"</span><span class="p">,</span> <span class="s2">"DELETE"</span><span class="p">])</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">article_detail</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">article_id</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    GET returns one article.</span>
+
+<span class="sd">    PUT updates an article, sending every field, and PATCH updates</span>
+<span class="sd">    only the fields sent. Either can approve a pending article by</span>
+<span class="sd">    sending ``"approved": true``.</span>
+
+<span class="sd">    DELETE deletes an article.</span>
+
+<span class="sd">    Each method follows the same rules as the website.</span>
+
+<span class="sd">    :param request: The API request. For PUT and PATCH, the article's</span>
+<span class="sd">        fields as JSON.</span>
+<span class="sd">    :param article_id: The article's ID, from the URL.</span>
+<span class="sd">    :returns: For GET, PUT, and PATCH, the article. For DELETE, 204 No</span>
+<span class="sd">        Content. A change the caller may not make gets 403 Forbidden,</span>
+<span class="sd">        and data that is not valid gets 400 Bad Request, each with a</span>
+<span class="sd">        message saying why.</span>
+<span class="sd">    :raises Http404: If the article does not exist, or the caller may</span>
+<span class="sd">        not read it.</span>
+<span class="sd">    """</span>
+    <span class="c1"># A caller who may not read the article gets 404, so the response</span>
+    <span class="c1"># does not reveal that a pending article exists.</span>
+    <span class="n">article</span> <span class="o">=</span> <span class="n">get_object_or_404</span><span class="p">(</span>
+        <span class="n">articles_visible_to</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span>
+            <span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span>
+        <span class="p">),</span>
+        <span class="n">pk</span><span class="o">=</span><span class="n">article_id</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"GET"</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">ArticleSerializer</span><span class="p">(</span><span class="n">article</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">contains</span><span class="p">(</span><span class="n">articles_user_can_change</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="n">article</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Only the author of an independent article, or "</span>
+                <span class="s2">"the staff of an article's publication, can change or "</span>
+                <span class="s2">"delete it."</span>
+            <span class="p">},</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"DELETE"</span><span class="p">:</span>
+        <span class="n">article</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_204_NO_CONTENT</span><span class="p">)</span>
+
+    <span class="c1"># Whether this request approves the article. Approval cannot be</span>
+    <span class="c1"># undone, and sending "approved": true again changes nothing.</span>
+    <span class="n">approving</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="s2">"approved"</span> <span class="ow">in</span> <span class="n">request</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">approved</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span><span class="o">.</span><span class="n">to_internal_value</span><span class="p">(</span>
+                <span class="n">request</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"approved"</span><span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">except</span> <span class="n">serializers</span><span class="o">.</span><span class="n">ValidationError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">fields_not_valid</span><span class="p">({</span><span class="s2">"approved"</span><span class="p">:</span> <span class="n">error</span><span class="o">.</span><span class="n">detail</span><span class="p">})</span>
+
+        <span class="k">if</span> <span class="n">article</span><span class="o">.</span><span class="n">approved</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">approved</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+                <span class="p">{</span>
+                    <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"An approved article cannot be set back to "</span>
+                    <span class="s2">"pending."</span>
+                <span class="p">},</span>
+                <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_400_BAD_REQUEST</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">approving</span> <span class="o">=</span> <span class="n">approved</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">article</span><span class="o">.</span><span class="n">approved</span>
+
+    <span class="k">if</span> <span class="n">approving</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">contains</span><span class="p">(</span>
+        <span class="n">articles_user_can_approve</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="p">),</span> <span class="n">article</span>
+    <span class="p">):</span>
+        <span class="k">return</span> <span class="n">Response</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="s2">"detail"</span><span class="p">:</span> <span class="s2">"Only a publication's editors can approve its "</span>
+                <span class="s2">"articles, and only the author can approve an independent "</span>
+                <span class="s2">"article."</span>
+            <span class="p">},</span>
+            <span class="n">status</span><span class="o">=</span><span class="n">status</span><span class="o">.</span><span class="n">HTTP_403_FORBIDDEN</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">serializer</span> <span class="o">=</span> <span class="n">ArticleSerializer</span><span class="p">(</span>
+        <span class="n">article</span><span class="p">,</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+        <span class="n">partial</span><span class="o">=</span><span class="n">request</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="s2">"PATCH"</span><span class="p">,</span>
+        <span class="n">context</span><span class="o">=</span><span class="p">{</span><span class="s2">"request"</span><span class="p">:</span> <span class="n">request</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">serializer</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">fields_not_valid</span><span class="p">(</span><span class="n">serializer</span><span class="o">.</span><span class="n">errors</span><span class="p">)</span>
+
+    <span class="c1"># Saving the approval runs the approval signals, which email the</span>
+    <span class="c1"># subscribers and share the article with the third party.</span>
+    <span class="k">if</span> <span class="n">approving</span><span class="p">:</span>
+        <span class="n">serializer</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">approved</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">serializer</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">Response</span><span class="p">(</span><span class="n">serializer</span><span class="o">.</span><span class="n">data</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

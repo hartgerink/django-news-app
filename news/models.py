@@ -1,3 +1,10 @@
+"""
+The news app's models: publications, articles, and newsletters.
+
+Each model sets its own table name, such as ``publication``, in place
+of Django's default, such as ``news_publication``.
+"""
+
 from django.db import models
 
 
@@ -9,6 +16,12 @@ class Publication(models.Model):
     Working for a publication gives an editor or journalist rights over
     its articles and newsletters. Being removed from its staff ends
     them.
+
+    :ivar owner: The publisher who owns the publication.
+    :ivar name: The publication's name, unique across the site.
+    :ivar description: A description of the publication.
+    :ivar editors: The editors who work for the publication.
+    :ivar journalists: The journalists who work for the publication.
     """
 
     owner = models.ForeignKey(
@@ -42,6 +55,12 @@ class Publication(models.Model):
         db_table = "publication"
 
     def __str__(self):
+        """
+        Show the publication as its name, such as in the admin and in
+        form choices.
+
+        :returns: The publication's name.
+        """
         return self.name
 
 
@@ -51,22 +70,29 @@ class Article(models.Model):
     independently.
 
     It must be approved before readers can see it.
+
+    :ivar title: The article's title.
+    :ivar content: The article's text.
+    :ivar author: The journalist who wrote the article. Never changes.
+    :ivar publication: The publication the article is for, or ``None``
+        for an independent article. Set when the article is created and
+        never changed, except that deleting the publication makes the
+        article independent.
+    :ivar created_at: When the article was created.
+    :ivar approved: Whether the article has been approved. Once an
+        article is approved, it is never set back to pending.
     """
 
     title = models.CharField(max_length=200)
 
     content = models.TextField()
 
-    # The journalist who wrote it. Never changes.
     author = models.ForeignKey(
         "accounts.User",
         on_delete=models.CASCADE,
         related_name="articles",
     )
 
-    # Empty for an independent article. Set when the article is created
-    # and never changed, except that deleting the publication makes the
-    # article independent.
     publication = models.ForeignKey(
         Publication,
         on_delete=models.SET_NULL,
@@ -77,7 +103,6 @@ class Article(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Once an article is approved, it is never set back to pending.
     approved = models.BooleanField(default=False)
 
     class Meta:
@@ -88,6 +113,12 @@ class Article(models.Model):
         permissions = [("approve_article", "Can approve article")]
 
     def __str__(self):
+        """
+        Show the article as its title, such as in the admin and in form
+        choices.
+
+        :returns: The article's title.
+        """
         return self.title
 
 
@@ -95,22 +126,31 @@ class Newsletter(models.Model):
     """
     A curated collection of approved articles, created by a journalist,
     either for a publication or independently.
+
+    :ivar title: The newsletter's title.
+    :ivar description: A description of the newsletter.
+    :ivar author: The journalist who created the newsletter. Never
+        changes.
+    :ivar publication: The publication the newsletter is for, or
+        ``None`` for an independent newsletter. Set when the newsletter
+        is created and never changed. Deleting the publication deletes
+        its newsletters.
+    :ivar created_at: When the newsletter was created.
+    :ivar articles: The articles in the newsletter. Approved articles
+        only: the publication's articles, or, for an independent
+        newsletter, the author's own independent articles.
     """
 
     title = models.CharField(max_length=200)
 
     description = models.TextField()
 
-    # The journalist who created it. Never changes.
     author = models.ForeignKey(
         "accounts.User",
         on_delete=models.CASCADE,
         related_name="newsletters",
     )
 
-    # Empty for an independent newsletter. Set when the newsletter is
-    # created and never changed. Deleting the publication deletes its
-    # newsletters.
     publication = models.ForeignKey(
         Publication,
         on_delete=models.CASCADE,
@@ -121,8 +161,6 @@ class Newsletter(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-    # Approved articles only: the publication's articles, or for an
-    # independent newsletter, the author's own independent articles.
     articles = models.ManyToManyField(
         Article,
         blank=True,
@@ -136,4 +174,9 @@ class Newsletter(models.Model):
         ordering = ["-created_at"]
 
     def __str__(self):
+        """
+        Show the newsletter as its title, such as in the admin.
+
+        :returns: The newsletter's title.
+        """
         return self.title

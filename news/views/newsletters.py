@@ -1,3 +1,8 @@
+"""
+The newsletter pages: the list of newsletters, and the pages for
+reading, creating, editing, and deleting a newsletter.
+"""
+
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count, Q
@@ -16,6 +21,9 @@ def newsletter_list(request):
     many approved articles each one contains.
 
     Every user sees the same list.
+
+    :param request: The HTTP request.
+    :returns: The newsletter list page.
     """
     newsletters = (
         Newsletter.objects.select_related("author", "publication")
@@ -42,6 +50,11 @@ def newsletter_detail(request, newsletter_id):
     approved articles.
 
     An ID that is not a newsletter's gets "404 Not Found".
+
+    :param request: The HTTP request.
+    :param newsletter_id: The newsletter's ID, from the URL.
+    :returns: The newsletter's page.
+    :raises Http404: If the newsletter does not exist.
     """
     newsletter = get_object_or_404(
         Newsletter.objects.select_related("author", "publication"),
@@ -62,8 +75,6 @@ def newsletter_detail(request, newsletter_id):
     return render(request, "news/newsletter_detail.html", context)
 
 
-# Only journalists can create newsletters. Other users are sent to their
-# dashboard.
 @user_passes_test(
     lambda user: user.has_perm("news.add_newsletter"),
     login_url="news:dashboard",
@@ -75,6 +86,13 @@ def create_newsletter(request):
     The page where a journalist puts together a new newsletter from
     approved articles, either independently or for a publication they
     are on the staff of.
+
+    Only journalists can create newsletters. Other users are sent to
+    their dashboard.
+
+    :param request: The HTTP request.
+    :returns: The newsletter form, or a redirect to the dashboard once
+        the newsletter is saved.
     """
     if request.method == "POST":
         form = NewsletterForm(request.POST, author=request.user)
@@ -109,6 +127,13 @@ def edit_newsletter(request, newsletter_id):
     The author can edit their own independent newsletters, and the staff
     of a publication can edit its newsletters. Anyone else gets "404 Not
     Found".
+
+    :param request: The HTTP request.
+    :param newsletter_id: The newsletter's ID, from the URL.
+    :returns: The newsletter form, or a redirect to the dashboard once
+        the changes are saved.
+    :raises Http404: If the newsletter does not exist, or the user may
+        not change it.
     """
     newsletter = get_object_or_404(
         newsletters_user_can_change(request.user),
@@ -152,6 +177,13 @@ def delete_newsletter(request, newsletter_id):
 
     The same users who can edit a newsletter can delete it. Anyone else
     gets "404 Not Found". The articles it contained are not deleted.
+
+    :param request: The HTTP request.
+    :param newsletter_id: The newsletter's ID, from the URL.
+    :returns: The confirmation page, or a redirect to the dashboard once
+        the newsletter is deleted.
+    :raises Http404: If the newsletter does not exist, or the user may
+        not change it.
     """
     newsletter = get_object_or_404(
         newsletters_user_can_change(request.user),

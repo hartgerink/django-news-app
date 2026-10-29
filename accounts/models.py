@@ -1,3 +1,8 @@
+"""
+The accounts app's model: the custom user, with a role and
+subscriptions.
+"""
+
 from django.contrib.auth.models import AbstractUser, Group
 from django.core.exceptions import ImproperlyConfigured
 from django.db import models
@@ -11,10 +16,26 @@ class User(AbstractUser):
     The role decides the user's group, and the group decides their
     permissions. Readers can also subscribe to publications and to
     journalists.
+
+    :cvar ROLE_CHOICES: The four roles, ``READER``, ``JOURNALIST``,
+        ``EDITOR``, and ``PUBLISHER``, each with the name shown for it.
+    :cvar ROLE_GROUPS: The group for each role. The groups, and the
+        permissions they grant, must be created during database setup
+        for users to be saved.
+    :ivar email: The user's email address. Required and unique, because
+        password reset links are sent by email and approved articles are
+        emailed to subscribers.
+    :ivar role: The user's role. Each user has exactly one, chosen at
+        registration, and it never changes.
+    :ivar subscribed_publications: Readers only. The publications the
+        reader subscribes to, covering all of each publication's
+        articles.
+    :ivar subscribed_journalists: Readers only, and only journalists can
+        be subscribed to. The journalists the reader subscribes to,
+        covering just each journalist's independent articles, not those
+        they write for a publication.
     """
 
-    # The four roles. Each user has exactly one, chosen at registration,
-    # and it never changes.
     READER = "reader"
     JOURNALIST = "journalist"
     EDITOR = "editor"
@@ -27,9 +48,6 @@ class User(AbstractUser):
         (PUBLISHER, "Publisher"),
     ]
 
-    # The group for each role. The groups, and the permissions they
-    # grant, must be created during database setup for users to be
-    # saved.
     ROLE_GROUPS = {
         READER: "Readers",
         JOURNALIST: "Journalists",
@@ -37,8 +55,6 @@ class User(AbstractUser):
         PUBLISHER: "Publishers",
     }
 
-    # Required and unique, because password reset links are sent by
-    # email and approved articles are emailed to subscribers.
     email = models.EmailField(unique=True)
 
     role = models.CharField(
@@ -47,7 +63,6 @@ class User(AbstractUser):
         default=READER,
     )
 
-    # Readers only. Covers all of each publication's articles.
     subscribed_publications = models.ManyToManyField(
         "news.Publication",
         blank=True,
@@ -55,9 +70,6 @@ class User(AbstractUser):
         db_table="publication_subscription",
     )
 
-    # Readers only, and only journalists can be subscribed to. Covers
-    # just each journalist's independent articles, not those they
-    # write for a publication.
     subscribed_journalists = models.ManyToManyField(
         "self",
         blank=True,
@@ -71,6 +83,8 @@ class User(AbstractUser):
         Save the user, and place them in their role's group and no
         other.
 
+        :param args: Passed on to Django's ``Model.save()``.
+        :param kwargs: Passed on to Django's ``Model.save()``.
         :raises ImproperlyConfigured: If the role's group does not
                                       exist, because the groups have
                                       not been set up yet.

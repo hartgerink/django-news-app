@@ -1,25 +1,33 @@
-# Remove groups and permissions
-# -----------------------------
-# Deletes the four role groups that setup_groups_and_permissions
-# creates, which undoes it. Deleting a group also removes its
-# permissions and every user's membership in it. The permissions
-# themselves are kept, because Django creates them from the models,
-# and the user accounts are kept too.
-#
-# Until the groups are set up again, no user can be saved, because
-# User.save() needs their role's group to exist.
-#
-# How to run it
-# -------------
-# From the folder that contains manage.py:
-#     python manage.py remove_groups_and_permissions
-# It asks you to type "yes" before deleting anything. To skip the
-# question:
-#     python manage.py remove_groups_and_permissions --no-input
-# To create the groups again afterward:
-#     python manage.py setup_groups_and_permissions
-#
-# It only runs while DEBUG is True, so it cannot change a live site.
+"""
+The ``remove_groups_and_permissions`` management command.
+
+Deletes the four role groups that ``setup_groups_and_permissions``
+creates, which undoes it. Deleting a group also removes its
+permissions and every user's membership in it. The permissions
+themselves are kept, because Django creates them from the models, and
+the user accounts are kept too.
+
+Until the groups are set up again, no user can be saved, because
+``User.save()`` needs their role's group to exist.
+
+.. rubric:: How to run it
+
+From the folder that contains ``manage.py``::
+
+    python manage.py remove_groups_and_permissions
+
+It asks you to type ``yes`` before deleting anything. To skip the
+question::
+
+    python manage.py remove_groups_and_permissions --no-input
+
+To create the groups again afterward::
+
+    python manage.py setup_groups_and_permissions
+
+It only runs while ``DEBUG`` is ``True``, so it cannot change a live
+site.
+"""
 
 from django.conf import settings
 from django.contrib.auth.models import Group
@@ -32,7 +40,8 @@ class Command(BaseCommand):
     """
     Delete the Readers, Publishers, Editors, and Journalists groups.
 
-    Run it with:
+    Run it with::
+
         python manage.py remove_groups_and_permissions
 
     Other groups, permissions, and user accounts are not touched.
@@ -46,7 +55,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         """
-        Add the --no-input option, which skips the "yes" question.
+        Add the ``--no-input`` option, which skips the ``yes`` question.
 
         :param parser: The command's argument parser, from Django.
         """
@@ -62,8 +71,12 @@ class Command(BaseCommand):
         """
         Ask for confirmation, then delete the role groups.
 
-        :raises CommandError: If DEBUG is False, or the answer is not
-                              "yes".
+        :param args: Positional arguments from Django. Not used.
+        :param options: The command's options, from Django. The
+            ``interactive`` option is ``False`` when ``--no-input`` is
+            given.
+        :raises CommandError: If ``DEBUG`` is ``False``, or the answer
+                              is not ``yes``.
         """
         if not settings.DEBUG:
             raise CommandError(

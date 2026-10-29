@@ -1,0 +1,164 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>third_party.serializers &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">third_party.serializers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for third_party.serializers</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The simulated third party's serializer, for the approved articles it</span>
+<span class="sd">receives.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">rest_framework</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializers</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">ThirdPartyArticle</span>
+
+
+<div class="viewcode-block" id="ThirdPartyArticleSerializer">
+<a class="viewcode-back" href="../../third_party.html#third_party.serializers.ThirdPartyArticleSerializer">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ThirdPartyArticleSerializer</span><span class="p">(</span><span class="n">serializers</span><span class="o">.</span><span class="n">ModelSerializer</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Checks an approved article sent to the simulated third party, and</span>
+<span class="sd">    turns the saved record back into JSON.</span>
+
+<span class="sd">    Every field sent is required: the title, content, journalist's</span>
+<span class="sd">    username, publication's name, and the article's creation date and</span>
+<span class="sd">    time. The publication is ``null`` for an independent article.</span>
+
+<span class="sd">    :ivar publication: The publication's name. It can be ``null`` for</span>
+<span class="sd">        an independent article, which is stored as blank.</span>
+<span class="sd">    """</span>
+
+    <span class="n">publication</span> <span class="o">=</span> <span class="n">serializers</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span>
+        <span class="n">max_length</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+        <span class="n">allow_null</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">allow_blank</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">class</span><span class="w"> </span><span class="nc">Meta</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">ThirdPartyArticle</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="s2">"id"</span><span class="p">,</span>
+            <span class="s2">"title"</span><span class="p">,</span>
+            <span class="s2">"content"</span><span class="p">,</span>
+            <span class="s2">"journalist"</span><span class="p">,</span>
+            <span class="s2">"publication"</span><span class="p">,</span>
+            <span class="s2">"created_at"</span><span class="p">,</span>
+            <span class="s2">"received_at"</span><span class="p">,</span>
+        <span class="p">]</span>
+        <span class="n">read_only_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">"received_at"</span><span class="p">]</span>
+
+<div class="viewcode-block" id="ThirdPartyArticleSerializer.validate_publication">
+<a class="viewcode-back" href="../../third_party.html#third_party.serializers.ThirdPartyArticleSerializer.validate_publication">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">validate_publication</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">publication</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""</span>
+<span class="sd">        Turns the null publication sent for an independent article into</span>
+<span class="sd">        a blank one, since the model's publication can be blank but not</span>
+<span class="sd">        null.</span>
+
+<span class="sd">        :param publication: The publication's name sent, or ``None`` for</span>
+<span class="sd">            an independent article.</span>
+<span class="sd">        :returns: The publication's name, or an empty string for an</span>
+<span class="sd">            independent article.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">publication</span> <span class="ow">or</span> <span class="s2">""</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

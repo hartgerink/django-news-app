@@ -1,3 +1,8 @@
+"""
+The third_party app's model: the simulated third party's record of each
+approved article it receives.
+"""
+
 from django.db import models
 
 
@@ -8,22 +13,26 @@ class ThirdPartyArticle(models.Model):
     It is the third party's own record, so it stores plain text copies
     of the article's details, with no links to the application's other
     tables.
+
+    :ivar title: The article's title.
+    :ivar content: The article's text.
+    :ivar journalist: The author's username.
+    :ivar publication: The publication's name, or blank for an
+        independent article.
+    :ivar created_at: When the article was created in the application.
+    :ivar received_at: When the third party received the article.
     """
 
     title = models.CharField(max_length=200)
 
     content = models.TextField()
 
-    # The author's username.
     journalist = models.CharField(max_length=150)
 
-    # The publication's name, or blank for an independent article.
     publication = models.CharField(max_length=200, blank=True)
 
-    # When the article was created in the application.
     created_at = models.DateTimeField()
 
-    # When the third party received it.
     received_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -31,4 +40,9 @@ class ThirdPartyArticle(models.Model):
         ordering = ["-received_at"]
 
     def __str__(self):
+        """
+        Show the article as its title, such as in the admin.
+
+        :returns: The article's title.
+        """
         return self.title

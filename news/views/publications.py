@@ -1,3 +1,8 @@
+"""
+The publication pages: the list of publications, and the pages for
+reading about, creating, editing, and deleting a publication.
+"""
+
 from django.contrib import messages
 from django.contrib.auth.decorators import user_passes_test
 from django.db.models import Count, Q
@@ -20,6 +25,9 @@ def publication_list(request):
     Publishers, editors and journalists see their own publications
     first, under My Publications, and the rest under Other
     Publications. Readers see one list.
+
+    :param request: The HTTP request.
+    :returns: The publication list page.
     """
     publications = (
         Publication.objects.select_related("owner")
@@ -92,6 +100,11 @@ def publication_detail(request, publication_id):
     approved articles and newsletters.
 
     An ID that is not a publication's gets "404 Not Found".
+
+    :param request: The HTTP request.
+    :param publication_id: The publication's ID, from the URL.
+    :returns: The publication's page.
+    :raises Http404: If the publication does not exist.
     """
     publication = get_object_or_404(
         Publication.objects.select_related("owner"),
@@ -136,8 +149,6 @@ def publication_detail(request, publication_id):
     return render(request, "news/publication_detail.html", context)
 
 
-# Only publishers can create publications. Other users are sent to their
-# dashboard.
 @user_passes_test(
     lambda user: user.has_perm("news.add_publication"),
     login_url="news:dashboard",
@@ -148,6 +159,13 @@ def create_publication(request):
     """
     The page where a publisher creates a new publication and chooses
     its editors and journalists.
+
+    Only publishers can create publications. Other users are sent to
+    their dashboard.
+
+    :param request: The HTTP request.
+    :returns: The publication form, or a redirect to the dashboard once
+        the publication is created.
     """
     if request.method == "POST":
         form = PublicationForm(request.POST)
@@ -182,6 +200,13 @@ def edit_publication(request, publication_id):
 
     An editor or journalist taken off the staff loses their rights over
     its content. Anyone but the owner gets "404 Not Found".
+
+    :param request: The HTTP request.
+    :param publication_id: The publication's ID, from the URL.
+    :returns: The publication form, or a redirect to the dashboard once
+        the changes are saved.
+    :raises Http404: If the publication does not exist, or the user is
+        not its owner.
     """
     publication = get_object_or_404(
         publications_user_can_manage(request.user, "news.change_publication"),
@@ -220,6 +245,13 @@ def delete_publication(request, publication_id):
     Its articles become independent and keep their approval. Its
     newsletters and the subscriptions to it are deleted. Anyone but the
     owner gets "404 Not Found".
+
+    :param request: The HTTP request.
+    :param publication_id: The publication's ID, from the URL.
+    :returns: The confirmation page, or a redirect to the dashboard once
+        the publication is deleted.
+    :raises Http404: If the publication does not exist, or the user is
+        not its owner.
     """
     publication = get_object_or_404(
         publications_user_can_manage(request.user, "news.delete_publication"),

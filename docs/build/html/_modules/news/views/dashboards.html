@@ -1,0 +1,300 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>news.views.dashboards &mdash; Django News  documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=5929fcd5"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            Django News
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Apps:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../accounts.html">Accounts</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../news.html">News</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../api.html">API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../third_party.html">Third party</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">Django News</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">news.views.dashboards</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for news.views.dashboards</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""</span>
+<span class="sd">The welcome page, and the dashboards.</span>
+
+<span class="sd">Each role has its own dashboard function. They have no URL of their</span>
+<span class="sd">own, since :func:`dashboard` shows the one that matches the user's</span>
+<span class="sd">role.</span>
+<span class="sd">"""</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.contrib.auth.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">login_not_required</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.db.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Count</span><span class="p">,</span> <span class="n">Prefetch</span><span class="p">,</span> <span class="n">Q</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.shortcuts</span><span class="w"> </span><span class="kn">import</span> <span class="n">redirect</span><span class="p">,</span> <span class="n">render</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">django.views.decorators.http</span><span class="w"> </span><span class="kn">import</span> <span class="n">require_GET</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">accounts.models</span><span class="w"> </span><span class="kn">import</span> <span class="n">User</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">..access</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">articles_user_can_change</span><span class="p">,</span>
+    <span class="n">newsletters_user_can_change</span><span class="p">,</span>
+    <span class="n">subscribed_articles</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">..models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Article</span>
+
+
+<div class="viewcode-block" id="welcome">
+<a class="viewcode-back" href="../../../news.html#news.views.dashboards.welcome">[docs]</a>
+<span class="nd">@login_not_required</span>
+<span class="nd">@require_GET</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">welcome</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The welcome page for visitors, with links to log in and register.</span>
+
+<span class="sd">    It is open to visitors, since it is the first page they see. A</span>
+<span class="sd">    logged-in user is sent to their dashboard instead.</span>
+
+<span class="sd">    :param request: The HTTP request.</span>
+<span class="sd">    :returns: The welcome page, or a redirect to the dashboard for a</span>
+<span class="sd">        logged-in user.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">is_authenticated</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">redirect</span><span class="p">(</span><span class="s2">"news:dashboard"</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"news/welcome.html"</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="reader_dashboard">
+<a class="viewcode-back" href="../../../news.html#news.views.dashboards.reader_dashboard">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reader_dashboard</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The reader's dashboard, with how many publications and journalists</span>
+<span class="sd">    they subscribe to, and the approved articles from those</span>
+<span class="sd">    subscriptions, newest first.</span>
+
+<span class="sd">    :param request: The HTTP request, from a reader, or from a user</span>
+<span class="sd">        without a known role.</span>
+<span class="sd">    :returns: The reader's dashboard page.</span>
+<span class="sd">    """</span>
+    <span class="n">reader</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span>
+
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"publication_count"</span><span class="p">:</span> <span class="n">reader</span><span class="o">.</span><span class="n">subscribed_publications</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span>
+        <span class="s2">"journalist_count"</span><span class="p">:</span> <span class="n">reader</span><span class="o">.</span><span class="n">subscribed_journalists</span><span class="o">.</span><span class="n">count</span><span class="p">(),</span>
+        <span class="s2">"subscribed_articles"</span><span class="p">:</span> <span class="n">subscribed_articles</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span>
+            <span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"news/dashboard_reader.html"</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="journalist_dashboard">
+<a class="viewcode-back" href="../../../news.html#news.views.dashboards.journalist_dashboard">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">journalist_dashboard</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The journalist's dashboard, with the articles and newsletters they</span>
+<span class="sd">    can change, and the publications they are on the staff of.</span>
+
+<span class="sd">    That covers their own independent work and all the content of their</span>
+<span class="sd">    publications, including what other staff members wrote.</span>
+
+<span class="sd">    :param request: The HTTP request, from a journalist.</span>
+<span class="sd">    :returns: The journalist's dashboard page.</span>
+<span class="sd">    """</span>
+    <span class="n">journalist</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span>
+
+    <span class="n">articles</span> <span class="o">=</span> <span class="n">articles_user_can_change</span><span class="p">(</span><span class="n">journalist</span><span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span>
+        <span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span>
+    <span class="p">)</span>
+
+    <span class="n">context</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"pending_articles"</span><span class="p">:</span> <span class="n">articles</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">approved</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+        <span class="s2">"approved_articles"</span><span class="p">:</span> <span class="n">articles</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">approved</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+        <span class="s2">"newsletters"</span><span class="p">:</span> <span class="n">newsletters_user_can_change</span><span class="p">(</span><span class="n">journalist</span><span class="p">)</span><span class="o">.</span><span class="n">select_related</span><span class="p">(</span>
+            <span class="s2">"author"</span><span class="p">,</span> <span class="s2">"publication"</span>
+        <span class="p">),</span>
+        <span class="s2">"publications"</span><span class="p">:</span> <span class="n">journalist</span><span class="o">.</span><span class="n">journalist_publications</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"name"</span><span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="s2">"news/dashboard_journalist.html"</span><span class="p">,</span> <span class="n">context</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="editor_dashboard">
+<a class="viewcode-back" href="../../../news.html#news.views.dashboards.editor_dashboard">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">editor_dashboard</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The editor's dashboard: their review queue.</span>
+
+<span class="sd">    It lists each publication they are on the staff of, with its pending</span>
+<span class="sd">    articles, oldest first, so the ones that have waited longest come</span>
+<span class="sd">    first.</span>
+
+<span class="sd">    :param request: The HTTP request, from an editor.</span>
+<span class="sd">    :returns: The editor's dashboard page.</span>
+<span class="sd">    """</span>
+    <span class="n">publications</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">editor_publications</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span>
+        <span class="s2">"name"</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">prefetch_related</span><span class="p">(</span>
+        <span class="n">Prefetch</span><span class="p">(</span>
+            <span class="s2">"articles"</span><span class="p">,</span>
+            <span class="n">queryset</span><span class="o">=</span><span class="n">Article</span><span class="o">.</span><span class="n">objects</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">approved</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">select_related</span><span class="p">(</span><span class="s2">"author"</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"created_at"</span><span class="p">),</span>
+            <span class="n">to_attr</span><span class="o">=</span><span class="s2">"pending_articles"</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="s2">"news/dashboard_editor.html"</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">"publications"</span><span class="p">:</span> <span class="n">publications</span><span class="p">},</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="publisher_dashboard">
+<a class="viewcode-back" href="../../../news.html#news.views.dashboards.publisher_dashboard">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">publisher_dashboard</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The publisher's dashboard, with each publication they own and how</span>
+<span class="sd">    many editors, journalists and approved articles it has.</span>
+
+<span class="sd">    :param request: The HTTP request, from a publisher.</span>
+<span class="sd">    :returns: The publisher's dashboard page.</span>
+<span class="sd">    """</span>
+    <span class="c1"># Publishers see only approved content, so pending articles are not</span>
+    <span class="c1"># counted.</span>
+    <span class="n">publications</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">owned_publications</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+        <span class="n">editor_count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span>
+            <span class="s2">"editors"</span><span class="p">,</span>
+            <span class="n">distinct</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">journalist_count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span>
+            <span class="s2">"journalists"</span><span class="p">,</span>
+            <span class="n">distinct</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">),</span>
+        <span class="n">approved_count</span><span class="o">=</span><span class="n">Count</span><span class="p">(</span>
+            <span class="s2">"articles"</span><span class="p">,</span>
+            <span class="nb">filter</span><span class="o">=</span><span class="n">Q</span><span class="p">(</span><span class="n">articles__approved</span><span class="o">=</span><span class="kc">True</span><span class="p">),</span>
+            <span class="n">distinct</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">order_by</span><span class="p">(</span><span class="s2">"name"</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">render</span><span class="p">(</span>
+        <span class="n">request</span><span class="p">,</span>
+        <span class="s2">"news/dashboard_publisher.html"</span><span class="p">,</span>
+        <span class="p">{</span><span class="s2">"publications"</span><span class="p">:</span> <span class="n">publications</span><span class="p">},</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="dashboard">
+<a class="viewcode-back" href="../../../news.html#news.views.dashboards.dashboard">[docs]</a>
+<span class="nd">@require_GET</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dashboard</span><span class="p">(</span><span class="n">request</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    The logged-in user's dashboard, where users land after logging in</span>
+<span class="sd">    or registering.</span>
+
+<span class="sd">    Every role shares this one page, which shows the dashboard for the</span>
+<span class="sd">    user's role.</span>
+
+<span class="sd">    :param request: The HTTP request.</span>
+<span class="sd">    :returns: The dashboard page for the user's role.</span>
+<span class="sd">    """</span>
+    <span class="n">dashboards</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">User</span><span class="o">.</span><span class="n">READER</span><span class="p">:</span> <span class="n">reader_dashboard</span><span class="p">,</span>
+        <span class="n">User</span><span class="o">.</span><span class="n">JOURNALIST</span><span class="p">:</span> <span class="n">journalist_dashboard</span><span class="p">,</span>
+        <span class="n">User</span><span class="o">.</span><span class="n">EDITOR</span><span class="p">:</span> <span class="n">editor_dashboard</span><span class="p">,</span>
+        <span class="n">User</span><span class="o">.</span><span class="n">PUBLISHER</span><span class="p">:</span> <span class="n">publisher_dashboard</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="c1"># A user without a known role gets the reader's dashboard, which</span>
+    <span class="c1"># shows only approved content.</span>
+    <span class="n">role_dashboard</span> <span class="o">=</span> <span class="n">dashboards</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">request</span><span class="o">.</span><span class="n">user</span><span class="o">.</span><span class="n">role</span><span class="p">,</span> <span class="n">reader_dashboard</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">role_dashboard</span><span class="p">(</span><span class="n">request</span><span class="p">)</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Kevin Hartgerink.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
