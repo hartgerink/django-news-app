@@ -2,8 +2,9 @@
 What happens when an article is approved: it is emailed to its
 subscribers and shared with the third party.
 
-The approval signals in ``news/signals.py`` call these functions. A
-failure in either one is logged, and the approval still stands.
+The approval signals in ``news/signals.py`` call these functions. If
+sending an email or reaching the third party fails, the failure is
+logged, and the approval still stands.
 """
 
 import logging
@@ -75,8 +76,9 @@ def share_article(article):
     Sends an approved article to the third-party API as JSON.
 
     It goes to the address in the ``THIRD_PARTY_API_URL`` setting, with
-    the ``THIRD_PARTY_API_KEY`` setting in the ``X-API-Key`` header. A
-    failure of any kind is logged, and the approval still stands.
+    the ``THIRD_PARTY_API_KEY`` setting in the ``X-API-Key`` header. If
+    the request fails, times out, or the third party answers with an
+    error, the failure is logged, and the approval still stands.
 
     :param article: The approved ``Article``.
     """
