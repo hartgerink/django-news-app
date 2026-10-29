@@ -1,0 +1,52 @@
+# .dockerignore for django-news-app
+#
+# Files and folders that docker build leaves out of the image. Docker
+# does not read .gitignore, so anything not listed here is copied into
+# the image by the Dockerfile's COPY step.
+#
+# Unlike .gitignore, a pattern here matches only at the top of the
+# project unless it starts with **/, which matches in every folder.
+
+# --- Secrets ---
+# Settings are passed in when a container starts, with --env-file, so
+# no secret is ever stored in the image.
+.env
+.env.*
+
+# --- Virtual environments ---
+# The image installs its own packages from requirements.txt.
+venv
+.venv
+env
+ENV
+
+# --- Git ---
+.git
+.gitignore
+.gitattributes
+
+# --- Python bytecode ---
+**/__pycache__
+**/*.py[cod]
+
+# --- Local runtime files ---
+**/*.log
+**/*.sqlite3
+media
+staticfiles
+
+# --- Documentation ---
+# The Sphinx source and HTML, which the application does not need to
+# run.
+docs
+
+# --- Docker's own files ---
+Dockerfile
+.dockerignore
+
+# --- Editors and operating systems ---
+.vscode
+.idea
+**/.DS_Store
+**/Thumbs.db
+**/desktop.ini
