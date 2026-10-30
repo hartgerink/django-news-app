@@ -120,3 +120,13 @@ SHOW GRANTS;
 ```
 
 Type `EXIT;` to leave the MariaDB command line.
+
+---
+
+**The setup guides:**
+
+- **Setting Up MariaDB** (this page)
+- [Installing Django News Directly](installing-django-news-directly.md)
+- [Running Django News with Docker](running-django-news-with-docker.md)
+
+[Back to the README](../README.md)

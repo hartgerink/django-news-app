@@ -7,9 +7,9 @@ articles.
 
 ## How the Django News Web Interface Works
 
-A complete tour of what Django News can do, role by role: from writing a
-first article, through an editor's approval, to the email that lands in a
-subscriber's inbox.
+A complete tour of what the Django News website can do, role by role: from
+writing a first article, through an editor's approval, to the email that
+lands in a subscriber's inbox.
 
 [How the Django News Web Interface Works](guide/how-the-django-news-web-interface-works.md)
 
@@ -44,3 +44,36 @@ Django News comes in two versions.
   Docker on your computer.
 
   [Running Django News with Docker](guide/running-django-news-with-docker.md)
+
+## Running the Unit Tests
+
+Django News's unit tests check that the REST API follows the site's rules
+for every role. Run them after changing the code.
+
+[Running the Unit Tests](guide/running-the-unit-tests.md)
+
+## The Code Documentation
+
+The code documentation, built with Sphinx, describes Django News's
+modules, classes, and functions, for anyone working on the code.
+
+- **Reading It**
+
+  Open the pages in a web browser with one command, and find your way
+  around them.
+
+  [Reading the Code Documentation](guide/reading-the-code-documentation.md)
+
+- **Writing Good Docstrings**
+
+  How docstrings become the pages, with an example from Django News for
+  each kind of code: modules, classes, functions, methods, and constants.
+
+  [Creating Good Documentation with Sphinx](guide/creating-good-documentation-with-sphinx.md)
+
+- **Keeping It Up to Date**
+
+  Add new Python files to the documentation, change its front page, and
+  rebuild the pages after a change.
+
+  [Maintaining the Code Documentation](guide/maintaining-the-code-documentation.md)

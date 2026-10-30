@@ -175,3 +175,13 @@ Use `docker start`, not `docker run`: running `docker run` again fails,
 because a container named `django-news-app` already exists.
 
 Your data stays in MariaDB, so there is nothing else to set up again.
+
+---
+
+**The setup guides:**
+
+- [Setting Up MariaDB](setting-up-mariadb.md)
+- [Installing Django News Directly](installing-django-news-directly.md)
+- **Running Django News with Docker** (this page)
+
+[Back to the README](../README.md)

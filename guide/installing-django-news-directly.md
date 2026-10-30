@@ -174,3 +174,13 @@ python manage.py runserver
 ```
 
 Your data stays in MariaDB, so there is nothing else to set up again.
+
+---
+
+**The setup guides:**
+
+- [Setting Up MariaDB](setting-up-mariadb.md)
+- **Installing Django News Directly** (this page)
+- [Running Django News with Docker](running-django-news-with-docker.md)
+
+[Back to the README](../README.md)
